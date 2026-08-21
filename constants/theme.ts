@@ -1,53 +1,23 @@
-/**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
- */
+export const colors = {
+  canvas: '#FFFFFF', canvasSoft: '#FAFAFA', surfaceMuted: '#F4F4F4',
+  ink: '#1C1C1C', inkSecondary: '#323232', inkMuted: 'rgba(28, 28, 28, 0.58)', inkInverse: '#FFFFFF',
+  line: 'rgba(28, 28, 28, 0.10)', lineStrong: 'rgba(28, 28, 28, 0.18)',
+  primary: '#98E2F4', primarySoft: '#E3F8FC', happy: '#FDB0E3', happySoft: '#FFE7F6',
+  calm: '#83F5CC', calmSoft: '#DDFFF1', darkCanvas: '#1C1C1C', darkSurface: '#323232',
+  danger: '#FF6B6B', dangerSoft: '#FFE8E8', darkLine: 'rgba(255, 255, 255, 0.12)',
+  darkMuted: 'rgba(255, 255, 255, 0.62)',
+} as const;
 
-import { Platform } from 'react-native';
+export const spacing = { page: 20, section: 28, item: 14, compact: 8 } as const;
+export const radii = { small: 10, medium: 16, large: 24, panel: 30, pill: 999 } as const;
 
-const tintColorLight = '#0a7ea4';
-const tintColorDark = '#fff';
-
-export const Colors = {
-  light: {
-    text: '#11181C',
-    background: '#fff',
-    tint: tintColorLight,
-    icon: '#687076',
-    tabIconDefault: '#687076',
-    tabIconSelected: tintColorLight,
-  },
-  dark: {
-    text: '#ECEDEE',
-    background: '#151718',
-    tint: tintColorDark,
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: tintColorDark,
-  },
-};
-
-export const Fonts = Platform.select({
-  ios: {
-    /** iOS `UIFontDescriptorSystemDesignDefault` */
-    sans: 'system-ui',
-    /** iOS `UIFontDescriptorSystemDesignSerif` */
-    serif: 'ui-serif',
-    /** iOS `UIFontDescriptorSystemDesignRounded` */
-    rounded: 'ui-rounded',
-    /** iOS `UIFontDescriptorSystemDesignMonospaced` */
-    mono: 'ui-monospace',
-  },
-  default: {
-    sans: 'normal',
-    serif: 'serif',
-    rounded: 'normal',
-    mono: 'monospace',
-  },
-  web: {
-    sans: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
-    serif: "Georgia, 'Times New Roman', serif",
-    rounded: "'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif",
-    mono: "SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace",
-  },
-});
+export const onboardingFonts = {
+  displayRegular: 'BricolageGrotesque_400Regular',
+  displayMedium: 'BricolageGrotesque_500Medium',
+  displaySemiBold: 'BricolageGrotesque_600SemiBold',
+  displayBold: 'BricolageGrotesque_700Bold',
+  bodyRegular: 'DMSans_400Regular',
+  bodyMedium: 'DMSans_500Medium',
+  bodySemiBold: 'DMSans_600SemiBold',
+  bodyBold: 'DMSans_700Bold',
+} as const;
