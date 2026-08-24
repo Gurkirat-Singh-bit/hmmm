@@ -20,7 +20,8 @@ import { colors, onboardingFonts, radii } from '@/constants/theme';
 import { ProviderLogo, ProviderLogoId } from '@/components/onboarding/ProviderLogo';
 import { ProviderDefinition } from '@/features/onboarding/provider-config';
 
-export function ProviderChoices<T extends string>({ options, value, onChange }: {
+export function ProviderChoices<T extends string>({ light = false, options, value, onChange }: {
+  light?: boolean;
   options: readonly ProviderDefinition<T>[];
   value: T;
   onChange(value: T): void;
@@ -29,7 +30,7 @@ export function ProviderChoices<T extends string>({ options, value, onChange }: 
 
   return (
     <View style={styles.group}>
-      <Text style={styles.label}>PROVIDER</Text>
+      <Text style={[styles.label, light && styles.lightMutedText]}>PROVIDER</Text>
       <View accessibilityRole="radiogroup" style={styles.choices}>
         {options.map((option) => {
           const selected = option.id === selectedProviderId;
@@ -39,14 +40,14 @@ export function ProviderChoices<T extends string>({ options, value, onChange }: 
               accessibilityState={{ checked: selected }}
               key={option.id}
               onPress={() => onChange(option.id)}
-              style={({ pressed }) => [styles.choice, selected && styles.choiceSelected, pressed && styles.pressed]}
+              style={({ pressed }) => [styles.choice, light && styles.choiceLight, selected && styles.choiceSelected, pressed && styles.pressed]}
             >
               <View style={[styles.logoShell, selected && styles.logoShellSelected]}>
                 <ProviderLogo providerId={option.id as ProviderLogoId} />
               </View>
               <View style={styles.choiceCopy}>
-                <Text numberOfLines={1} style={[styles.choiceText, selected && styles.choiceTextSelected]}>{option.label}</Text>
-                <Text numberOfLines={2} style={[styles.choiceDescription, selected && styles.choiceDescriptionSelected]}>{option.description}</Text>
+                <Text numberOfLines={1} style={[styles.choiceText, light && styles.lightText, selected && styles.choiceTextSelected]}>{option.label}</Text>
+                <Text numberOfLines={2} style={[styles.choiceDescription, light && styles.lightMutedText, selected && styles.choiceDescriptionSelected]}>{option.description}</Text>
               </View>
               {selected ? <View style={styles.choiceCheck}><Check color={colors.ink} size={9} weight="bold" /></View> : null}
             </Pressable>
@@ -57,12 +58,12 @@ export function ProviderChoices<T extends string>({ options, value, onChange }: 
   );
 }
 
-export function EndpointField({ value, onChangeText }: { value: string; onChangeText(value: string): void }) {
+export function EndpointField({ light = false, value, onChangeText }: { light?: boolean; value: string; onChangeText(value: string): void }) {
   return (
     <View style={styles.fieldGroup}>
-      <Text style={styles.label}>PROVIDER BASE URL</Text>
-      <View style={[styles.inputShell, Boolean(value.trim()) && styles.inputComplete]}>
-        <TextInput autoCapitalize="none" autoCorrect={false} keyboardType="url" onChangeText={onChangeText} placeholder="https://api.example.com/v1" placeholderTextColor={colors.darkMuted} style={styles.input} value={value} />
+      <Text style={[styles.label, light && styles.lightMutedText]}>PROVIDER BASE URL</Text>
+      <View style={[styles.inputShell, light && styles.inputShellLight, Boolean(value.trim()) && styles.inputComplete]}>
+        <TextInput autoCapitalize="none" autoCorrect={false} keyboardType="url" onChangeText={onChangeText} placeholder="https://api.example.com/v1" placeholderTextColor={light ? colors.inkMuted : colors.darkMuted} style={[styles.input, light && styles.lightText]} value={value} />
       </View>
       <Text style={styles.endpointHint}>The app discovers models from this URL plus /models.</Text>
     </View>
@@ -88,9 +89,10 @@ export function NameField({ attempted, value, onChangeText, onFocus, onSubmit }:
   );
 }
 
-export function SecretField({ attempted, label, placeholder, value, onChangeText }: {
+export function SecretField({ attempted, label, light = false, placeholder, value, onChangeText }: {
   attempted: boolean;
   label: string;
+  light?: boolean;
   placeholder: string;
   value: string;
   onChangeText(value: string): void;
@@ -100,10 +102,10 @@ export function SecretField({ attempted, label, placeholder, value, onChangeText
   const error = attempted && !complete;
   return (
     <View style={styles.fieldGroup}>
-      <Text style={styles.label}>{label}</Text>
-      <View style={[styles.inputShell, complete && styles.inputComplete, error && styles.inputError]}>
+      <Text style={[styles.label, light && styles.lightMutedText]}>{label}</Text>
+      <View style={[styles.inputShell, light && styles.inputShellLight, complete && styles.inputComplete, error && styles.inputError]}>
         <Key color={complete ? colors.calm : colors.darkMuted} size={18} weight="bold" />
-        <TextInput accessibilityLabel={label} autoCapitalize="none" autoCorrect={false} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={colors.darkMuted} secureTextEntry={!visible} style={styles.input} value={value} />
+        <TextInput accessibilityLabel={label} autoCapitalize="none" autoCorrect={false} onChangeText={onChangeText} placeholder={placeholder} placeholderTextColor={light ? colors.inkMuted : colors.darkMuted} secureTextEntry={!visible} style={[styles.input, light && styles.lightText]} value={value} />
         <Pressable accessibilityLabel={visible ? `Hide ${label}` : `Show ${label}`} hitSlop={10} onPress={() => setVisible((current) => !current)}>
           {visible ? <EyeSlash color={colors.darkMuted} size={19} /> : <Eye color={colors.darkMuted} size={19} />}
         </Pressable>
@@ -134,4 +136,5 @@ const styles = StyleSheet.create({
   choiceCopy: { flex: 1, gap: 2 }, choiceText: { color: colors.inkInverse, fontFamily: onboardingFonts.bodySemiBold, fontSize: 11 }, choiceTextSelected: { color: colors.ink },
   choiceDescription: { color: colors.darkMuted, fontFamily: onboardingFonts.bodyRegular, fontSize: 8, lineHeight: 11 }, choiceDescriptionSelected: { color: colors.inkMuted },
   endpointHint: { color: colors.darkMuted, fontFamily: onboardingFonts.bodyRegular, fontSize: 10, lineHeight: 15 }, pressed: { opacity: 0.72 },
+  choiceLight: { borderColor: colors.line, backgroundColor: colors.canvas }, inputShellLight: { borderColor: colors.line, backgroundColor: colors.canvas }, lightText: { color: colors.ink }, lightMutedText: { color: colors.inkMuted },
 });

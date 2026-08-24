@@ -19,9 +19,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { colors, onboardingFonts, radii, spacing } from '@/constants/theme';
 
-export function SearchableModelPicker({ error, label, loading, options, value, onChange, onRefresh }: {
+export function SearchableModelPicker({ error, label, light = false, loading, options, value, onChange, onRefresh }: {
   error?: string | null;
   label: string;
+  light?: boolean;
   loading?: boolean;
   options: readonly string[];
   value: string;
@@ -50,16 +51,16 @@ export function SearchableModelPicker({ error, label, loading, options, value, o
     <>
       <View style={styles.group}>
         <View style={styles.labelRow}>
-          <Text style={styles.label}>{label}</Text>
+          <Text style={[styles.label, light && styles.lightMutedText]}>{label}</Text>
           {onRefresh ? <Pressable accessibilityLabel="Sync model catalog" disabled={loading} onPress={onRefresh} style={({ pressed }) => [styles.syncButton, pressed && styles.pressed]}>
             <ArrowClockwise color={colors.darkMuted} size={13} weight="bold" />
             <Text style={styles.syncText}>{loading ? 'SYNCING' : 'SYNC CATALOG'}</Text>
           </Pressable> : null}
         </View>
-        <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(true)} style={({ pressed }) => [styles.trigger, pressed && styles.pressed]}>
+        <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(true)} style={({ pressed }) => [styles.trigger, light && styles.triggerLight, pressed && styles.pressed]}>
           <View style={styles.triggerCopy}>
-            <Text numberOfLines={1} style={[styles.value, !value && styles.placeholder]}>{value || 'Choose a model'}</Text>
-            <Text numberOfLines={1} style={styles.hint}>{loading ? 'Loading current models…' : `${options.length} models available · Tap to search`}</Text>
+            <Text numberOfLines={1} style={[styles.value, light && styles.lightText, !value && styles.placeholder]}>{value || 'Choose a model'}</Text>
+            <Text numberOfLines={1} style={[styles.hint, light && styles.lightMutedText]}>{loading ? 'Loading current models…' : `${options.length} models available · Tap to search`}</Text>
           </View>
           <CaretDown color={colors.darkMuted} size={18} weight="bold" />
         </Pressable>
@@ -121,4 +122,5 @@ const styles = StyleSheet.create({
   row: { minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: colors.line },
   rowSelected: { borderBottomColor: colors.primary, borderRadius: radii.medium, backgroundColor: colors.primarySoft }, rowCopy: { flex: 1, gap: 4 }, rowValue: { color: colors.ink, fontFamily: onboardingFonts.bodySemiBold, fontSize: 14 }, custom: { color: colors.inkMuted, fontFamily: onboardingFonts.bodyBold, fontSize: 8, letterSpacing: 0.8 },
   empty: { gap: 6, paddingVertical: 36 }, emptyTitle: { color: colors.ink, fontFamily: onboardingFonts.displaySemiBold, fontSize: 17 }, emptyBody: { color: colors.inkMuted, fontFamily: onboardingFonts.bodyRegular, fontSize: 13, lineHeight: 19 },
+  triggerLight: { borderColor: colors.line, backgroundColor: colors.canvas }, lightText: { color: colors.ink }, lightMutedText: { color: colors.inkMuted },
 });

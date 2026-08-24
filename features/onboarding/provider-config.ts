@@ -50,11 +50,11 @@ export const defaultSpeechModel = speechProviders[0].starterModels[0];
 export const defaultAiModel = aiProviders[0].starterModels[0];
 
 /** Returns the speech-provider definition for a persisted provider identifier. */
-export function findSpeechProvider(id: SpeechProvider) {
+export function findSpeechProvider(id: string | null | undefined) {
   return speechProviders.find((provider) => provider.id === id) ?? speechProviders[0];
 }
 
 /** Returns the AI-provider definition for a persisted provider identifier. */
-export function findAiProvider(id: AiProvider) {
+export function findAiProvider(id: string | null | undefined) {
   return aiProviders.find((provider) => provider.id === id) ?? aiProviders[0];
 }

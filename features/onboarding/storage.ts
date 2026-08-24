@@ -30,6 +30,23 @@ const keys = {
 
 let webSessionProfile: OnboardingProfile | null = null;
 const onboardingVersion = '2';
+let webLanguage: AppLanguage = 'English';
+
+export type AppLanguage = 'English' | 'Hindi' | 'Punjabi';
+
+export async function readLanguage(): Promise<AppLanguage> {
+  if (Platform.OS === 'web') return webLanguage;
+  return ((await readNative('hmmm.app-language')) as AppLanguage | null) ?? 'English';
+}
+
+export async function saveLanguage(language: AppLanguage) {
+  if (Platform.OS === 'web') {
+    webLanguage = language;
+    return;
+  }
+  await SecureStore.setItemAsync('hmmm.app-language', language);
+}
+
 
 async function readNative(key: string) {
   return Platform.OS === 'web' ? null : SecureStore.getItemAsync(key);

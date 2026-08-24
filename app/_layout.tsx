@@ -14,13 +14,14 @@ import { Nunito_500Medium } from '@expo-google-fonts/nunito/500Medium';
 import { Nunito_600SemiBold } from '@expo-google-fonts/nunito/600SemiBold';
 import { Nunito_700Bold } from '@expo-google-fonts/nunito/700Bold';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { View } from 'react-native';
 import { useEffect } from 'react';
 
 import { colors } from '@/constants/theme';
+import { FloatingBottomNav } from '@/components/FloatingBottomNav';
 import { prefetchPublicCatalogs } from '@/features/onboarding/model-catalog';
 
 export default function RootLayout() {
@@ -41,10 +42,22 @@ export default function RootLayout() {
 
   if (!fontsLoaded) return <View style={{ flex: 1, backgroundColor: colors.darkCanvas }} />;
 
+  return <SafeAreaProvider><RootNavigator /></SafeAreaProvider>;
+}
+
+function RootNavigator() {
+  const pathname = usePathname();
   return (
-    <SafeAreaProvider>
+    <>
       <StatusBar style="dark" />
-      <Stack screenOptions={{ animation: 'fade', contentStyle: { backgroundColor: colors.canvas }, headerShown: false }} />
-    </SafeAreaProvider>
+      <Stack
+        screenOptions={({ route }) => ({
+          animation: ['index', 'vault', 'discuss', 'settings/index'].includes(route.name) ? 'none' : 'fade',
+          contentStyle: { backgroundColor: colors.canvas },
+          headerShown: false,
+        })}
+      />
+      {['/', '/vault', '/discuss', '/settings'].includes(pathname) ? <FloatingBottomNav /> : null}
+    </>
   );
 }

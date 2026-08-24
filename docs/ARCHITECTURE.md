@@ -23,7 +23,7 @@ The app should remove resistance at capture time. Organization happens after the
 - **Provider choice.** Users configure their own speech and AI providers and credentials.
 - **Honest limitations.** Network-backed work cannot be guaranteed while a mobile OS has suspended or killed the app.
 
-The visual system is defined separately in [Design.md](./Design.md). That file—not the old prototype—is the source of truth for colors, typography, spacing, shapes, interaction styling, and accessibility.
+The visual system is defined separately in [Design.md](./Design.md). That file, not the old prototype, is the source of truth for colors, typography, spacing, shapes, interaction styling, and accessibility.
 
 ## 3. Product areas
 
@@ -80,13 +80,29 @@ The control center for provider and data behavior.
 Responsibilities:
 
 - Change speech and AI provider/model configuration.
+- Persist an app and generated-content language preference.
 - Manage notification preferences.
 - Enable or disable optional web research.
 - Choose whether original audio is retained after successful transcription.
 - Export all non-secret user data.
 - Delete local data and referenced audio with explicit confirmation.
 - Explain where ideas and API keys are stored.
+- Provide an in-app workflow guide and answers to common product questions.
+- Publish a plain-language privacy policy that describes local storage and direct provider requests.
+- Show application version, MIT license, source repository, and issue-tracker links.
 - Edit the system prompt only if the product exposes this as an advanced, validated setting.
+
+Settings secondary routes:
+
+| Route | Purpose |
+| --- | --- |
+| `/settings/providers` | Edit speech and AI providers, credentials, endpoints, and models in place |
+| `/settings/language` | Select and persist the preferred language |
+| `/settings/how-to-use` | Explain the complete capture-to-report workflow |
+| `/settings/faq` | Answer common questions about local data, providers, failures, and exports |
+| `/settings/export-data` | Share a JSON copy of non-secret profile and provider configuration |
+| `/settings/privacy` | Explain storage, network boundaries, credentials, retention, and exports |
+| `/settings/about` | Show app identity, version, MIT license, repository, and issue tracker |
 
 Provider presets and default endpoints belong in dedicated configuration modules, not screen files.
 
@@ -96,11 +112,11 @@ The structured, section-based representation of one capture.
 
 Initial report sections:
 
-1. **The gist** — what the idea is.
-2. **Evidence** — research findings and sources, when research is enabled.
-3. **Risk check** — assumptions, weaknesses, and possible failure modes.
-4. **Next move** — one concrete action.
-5. **Original words** — the trustworthy raw transcript and optional source audio.
+1. **The gist:** what the idea is.
+2. **Evidence:** research findings and sources, when research is enabled.
+3. **Risk check:** assumptions, weaknesses, and possible failure modes.
+4. **Next move:** one concrete action.
+5. **Original words:** the trustworthy raw transcript and optional source audio.
 
 Responsibilities:
 
@@ -142,6 +158,13 @@ Root layout
 │   ├── vault
 │   ├── discuss
 │   └── settings
+│       ├── providers
+│       ├── language
+│       ├── how-to-use
+│       ├── faq
+│       ├── export-data
+│       ├── privacy
+│       └── about
 ├── idea/[id]
 ├── idea/[id]/discuss
 └── not-found

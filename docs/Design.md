@@ -344,6 +344,21 @@ Avoid continuous decorative animation.
 
 Respect reduced-motion preferences.
 
+## Settings
+
+Settings uses the same white canvas as the rest of the primary application shell. It starts with the compact shared Hmmmidea brand header and a seven-day activity summary, followed by grouped actions.
+
+Group settings actions by purpose:
+
+* Configuration: providers, models, credentials, and language.
+* Help: the complete product guide and frequently asked questions.
+* Data and privacy: non-secret export and the privacy policy.
+* About: version, MIT license, repository, and issue reporting.
+
+Each group uses one rounded list surface. Rows include a Phosphor icon, a concise title, one line of supporting copy, and a trailing caret. Secondary settings screens use a conventional circular back button, clear title and supporting copy, and no primary bottom dock.
+
+Provider controls on Settings use light surfaces. The dark provider treatment remains specific to focused onboarding.
+
 ## Accessibility
 
 Interactive targets must be at least 48px high or wide.
