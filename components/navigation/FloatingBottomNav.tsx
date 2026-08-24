@@ -1,6 +1,6 @@
 /**
  * @file FloatingBottomNav.tsx
- * @description Floating bottom navigation for the main product routes.
+ * @description Shared floating bottom navigation for the main product routes.
  * @author Gurkirat Singh
  * @license MIT
  */
@@ -13,7 +13,7 @@ import {
 } from 'phosphor-react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef } from 'react';
-import { Animated, Easing, LayoutAnimation, Platform, Pressable, StyleSheet, Text, UIManager, View, type LayoutChangeEvent } from 'react-native';
+import { Animated, Easing, LayoutAnimation, Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 
 import { colors, radii } from '@/constants/theme';
 
@@ -23,10 +23,6 @@ const tabs = [
   { label: 'Discuss', route: '/discuss', icon: ChatCircleDots },
   { label: 'Settings', route: '/settings', icon: GearSix },
 ] as const;
-
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 export function FloatingBottomNav() {
   const pathname = usePathname();

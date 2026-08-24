@@ -21,7 +21,7 @@ import { View } from 'react-native';
 import { useEffect } from 'react';
 
 import { colors } from '@/constants/theme';
-import { FloatingBottomNav } from '@/components/FloatingBottomNav';
+import { FloatingBottomNav } from '@/components/navigation/FloatingBottomNav';
 import { prefetchPublicCatalogs } from '@/features/onboarding/model-catalog';
 
 export default function RootLayout() {
