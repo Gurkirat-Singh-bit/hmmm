@@ -52,7 +52,7 @@ function RootNavigator() {
       <StatusBar style="dark" />
       <Stack
         screenOptions={({ route }) => ({
-          animation: ['index', 'vault', 'discuss', 'settings/index'].includes(route.name) ? 'none' : 'fade',
+          animation: ['index', 'vault/index', 'discuss', 'settings/index'].includes(route.name) ? 'none' : 'fade',
           contentStyle: { backgroundColor: colors.canvas },
           headerShown: false,
         })}

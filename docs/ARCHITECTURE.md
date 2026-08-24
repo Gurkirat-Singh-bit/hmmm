@@ -156,6 +156,7 @@ Root layout
 ├── primary app shell
 │   ├── capture (default / hero)
 │   ├── vault
+│   │   └── [id] (idea report)
 │   ├── discuss
 │   └── settings
 │       ├── providers
@@ -165,7 +166,6 @@ Root layout
 │       ├── export-data
 │       ├── privacy
 │       └── about
-├── idea/[id]
 ├── idea/[id]/discuss
 └── not-found
 ```
