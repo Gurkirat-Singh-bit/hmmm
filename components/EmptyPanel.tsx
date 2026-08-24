@@ -1,3 +1,10 @@
+/**
+ * @file EmptyPanel.tsx
+ * @description Reusable empty-state panel for product areas without content.
+ * @author Gurkirat Singh
+ * @license MIT
+ */
+
 import { StyleSheet, Text, View } from 'react-native';
 import { colors, radii } from '@/constants/theme';
 

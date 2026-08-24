@@ -1,3 +1,10 @@
+/**
+ * @file vault.tsx
+ * @description Vault route for browsing saved idea captures.
+ * @author Gurkirat Singh
+ * @license MIT
+ */
+
 import { AppScreen } from '@/components/AppScreen';
 import { EmptyPanel } from '@/components/EmptyPanel';
 

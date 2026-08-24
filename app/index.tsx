@@ -1,4 +1,11 @@
-import { Microphone } from 'phosphor-react-native';
+/**
+ * @file index.tsx
+ * @description Home capture route and onboarding entry guard.
+ * @author Gurkirat Singh
+ * @license MIT
+ */
+
+import { MicrophoneIcon as Microphone } from 'phosphor-react-native';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';

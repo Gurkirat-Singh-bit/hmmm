@@ -1,3 +1,10 @@
+/**
+ * @file discuss.tsx
+ * @description Discuss route for conversations about captured ideas.
+ * @author Gurkirat Singh
+ * @license MIT
+ */
+
 import { AppScreen } from '@/components/AppScreen';
 import { EmptyPanel } from '@/components/EmptyPanel';
 

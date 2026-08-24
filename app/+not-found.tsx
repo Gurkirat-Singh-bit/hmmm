@@ -1,3 +1,10 @@
+/**
+ * @file +not-found.tsx
+ * @description Expo Router fallback screen for routes that do not exist.
+ * @author Gurkirat Singh
+ * @license MIT
+ */
+
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, radii } from '@/constants/theme';

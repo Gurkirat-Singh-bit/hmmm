@@ -1,3 +1,10 @@
+/**
+ * @file theme.ts
+ * @description Shared color, spacing, radius, and typography design tokens.
+ * @author Gurkirat Singh
+ * @license MIT
+ */
+
 export const colors = {
   canvas: '#FFFFFF', canvasSoft: '#FAFAFA', surfaceMuted: '#F4F4F4',
   ink: '#1C1C1C', inkSecondary: '#323232', inkMuted: 'rgba(28, 28, 28, 0.58)', inkInverse: '#FFFFFF',
@@ -16,8 +23,8 @@ export const onboardingFonts = {
   displayMedium: 'BricolageGrotesque_500Medium',
   displaySemiBold: 'BricolageGrotesque_600SemiBold',
   displayBold: 'BricolageGrotesque_700Bold',
-  bodyRegular: 'DMSans_400Regular',
-  bodyMedium: 'DMSans_500Medium',
-  bodySemiBold: 'DMSans_600SemiBold',
-  bodyBold: 'DMSans_700Bold',
+  bodyRegular: 'Nunito_400Regular',
+  bodyMedium: 'Nunito_500Medium',
+  bodySemiBold: 'Nunito_600SemiBold',
+  bodyBold: 'Nunito_700Bold',
 } as const;

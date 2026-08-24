@@ -1,4 +1,11 @@
-import { Key, ShieldCheck } from 'phosphor-react-native';
+/**
+ * @file settings.tsx
+ * @description Settings route for managing local app configuration.
+ * @author Gurkirat Singh
+ * @license MIT
+ */
+
+import { KeyIcon as Key, ShieldCheckIcon as ShieldCheck } from 'phosphor-react-native';
 import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -10,7 +17,10 @@ export default function SettingsScreen() {
   return (
     <AppScreen eyebrow="SETTINGS" title="Simple controls. Clear storage." supporting="Provider keys stay in your device’s protected storage.">
       <View style={styles.card}><ShieldCheck color={colors.ink} size={23} weight="bold" /><View style={styles.copy}><Text style={styles.title}>Credentials configured</Text><Text style={styles.body}>Revisit onboarding to replace your local provider keys.</Text></View></View>
-      <Pressable onPress={() => router.push('/onboarding')} style={({ pressed }) => [styles.button, pressed && styles.pressed]}><Key color={colors.ink} size={19} weight="bold" /><Text style={styles.buttonText}>Edit credentials</Text></Pressable>
+      <Pressable accessibilityHint="Opens the onboarding flow" accessibilityRole="button" onPress={() => router.push('/onboarding')} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
+        <Key color={colors.ink} size={19} weight="bold" />
+        <Text style={styles.buttonText}>Open onboarding (temporary)</Text>
+      </Pressable>
     </AppScreen>
   );
 }

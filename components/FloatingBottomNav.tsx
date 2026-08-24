@@ -1,4 +1,16 @@
-import { Archive, ChatCircleDots, GearSix, House } from 'phosphor-react-native';
+/**
+ * @file FloatingBottomNav.tsx
+ * @description Floating bottom navigation for the main product routes.
+ * @author Gurkirat Singh
+ * @license MIT
+ */
+
+import {
+  ArchiveIcon as Archive,
+  ChatCircleDotsIcon as ChatCircleDots,
+  GearSixIcon as GearSix,
+  HouseIcon as House,
+} from 'phosphor-react-native';
 import { usePathname, useRouter } from 'expo-router';
 import { LayoutAnimation, Platform, Pressable, StyleSheet, Text, UIManager, View } from 'react-native';
 

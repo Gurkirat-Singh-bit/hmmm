@@ -1,3 +1,10 @@
+/**
+ * @file AppScreen.tsx
+ * @description Shared screen shell for primary application routes.
+ * @author Gurkirat Singh
+ * @license MIT
+ */
+
 import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
