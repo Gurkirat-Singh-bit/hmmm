@@ -158,6 +158,7 @@ Root layout
 │   ├── vault
 │   │   └── [id] (idea report)
 │   ├── discuss
+│   │   └── [ideaId] (idea conversation)
 │   └── settings
 │       ├── providers
 │       ├── language
@@ -166,7 +167,6 @@ Root layout
 │       ├── export-data
 │       ├── privacy
 │       └── about
-├── idea/[id]/discuss
 └── not-found
 ```
 
