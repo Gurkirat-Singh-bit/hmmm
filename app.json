@@ -22,7 +22,8 @@
       },
       "softwareKeyboardLayoutMode": "resize",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.gurkiratsinghbit.hmmm"
     },
     "web": {
       "output": "static"
