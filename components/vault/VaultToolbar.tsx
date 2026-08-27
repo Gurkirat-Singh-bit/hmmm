@@ -1,34 +1,102 @@
-/**
- * @file VaultToolbar.tsx
- * @description Search and status filters for Vault ideas.
- * @author Gurkirat Singh
- * @license MIT
- */
-
 import { MagnifyingGlassIcon as Search } from 'phosphor-react-native';
-import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, onboardingFonts, radii } from '@/constants/theme';
-import type { VaultFilter, VaultStatusFilter } from '@/features/vault/vault-preview';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
-const filters = [
-  { id: 'latest', label: 'Latest' },
-  { id: 'starred', label: 'Starred' },
-] as const;
-const statuses: { id: VaultStatusFilter; label: string; supporting: string }[] = [
-  { id: 'all', label: 'All statuses', supporting: 'Ready and processing ideas' },
-  { id: 'ready', label: 'Ready', supporting: 'Completed idea reports' },
-  { id: 'processing', label: 'Processing', supporting: 'Ideas still being structured' },
+import type { CaptureSort } from '@/features/database/contracts';
+import type { CaptureStatus } from '@/features/domain/contracts';
+import { colors, onboardingFonts, radii } from '@/constants/theme';
+import type { VaultFilters } from '@/features/vault/vault-preferences';
+
+const processing: readonly CaptureStatus[] = ['queued', 'transcribing', 'naming', 'researching'];
+const statusFilters: readonly { label: string; statuses: readonly CaptureStatus[] }[] = [
+  { label: 'All', statuses: [] },
+  { label: 'Processing', statuses: processing },
+  { label: 'Ready', statuses: ['ready'] },
+  { label: 'Failed', statuses: ['failed'] },
+];
+const sortOptions: readonly { value: CaptureSort; label: string }[] = [
+  { value: 'newest', label: 'Newest' },
+  { value: 'oldest', label: 'Oldest' },
+  { value: 'title-asc', label: 'A–Z' },
+  { value: 'title-desc', label: 'Z–A' },
 ];
 
-export function VaultToolbar({ filter, onFilterChange, onQueryChange, onStatusChange, query, status }: { filter: VaultFilter; onFilterChange(value: VaultFilter): void; onQueryChange(value: string): void; onStatusChange(value: VaultStatusFilter): void; query: string; status: VaultStatusFilter }) {
-  const [open, setOpen] = useState(false);
-  return <View style={styles.toolbar}><View style={styles.search}><Search color={colors.inkMuted} size={17} weight="bold" /><TextInput autoCapitalize="none" onChangeText={onQueryChange} placeholder="Search ideas" placeholderTextColor={colors.inkMuted} style={styles.input} value={query} /></View><View style={styles.filters}>{filters.map(({ id, label }) => { const active = id === filter; return <Pressable accessibilityRole="radio" accessibilityState={{ checked: active }} key={id} onPress={() => onFilterChange(id)} style={({ pressed }) => [styles.filter, active && styles.filterActive, pressed && styles.pressed]}><Text style={[styles.filterLabel, active && styles.filterLabelActive]}>{label}</Text></Pressable>; })}<Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(true)} style={[styles.filter, styles.filterMenu, status !== 'all' && styles.statusActive]}><Text style={[styles.filterLabel, status !== 'all' && styles.statusLabel]}>{status === 'all' ? 'Filter' : status === 'ready' ? 'Ready' : 'Processing'}</Text></Pressable></View><Modal animationType="slide" onRequestClose={() => setOpen(false)} transparent visible={open}><Pressable onPress={() => setOpen(false)} style={styles.backdrop}><SafeAreaView edges={['bottom']} style={styles.sheet}><Pressable><View style={styles.handle} /><Text style={styles.sheetTitle}>Filter ideas</Text><Text style={styles.sheetBody}>Show ideas by processing status.</Text><View style={styles.statuses}>{statuses.map((item) => { const active = item.id === status; return <Pressable accessibilityRole="radio" accessibilityState={{ checked: active }} key={item.id} onPress={() => { onStatusChange(item.id); setOpen(false); }} style={[styles.statusRow, active && styles.statusRowActive]}><View style={styles.statusCopy}><Text style={styles.statusTitle}>{item.label}</Text><Text style={styles.statusSupporting}>{item.supporting}</Text></View><View style={[styles.radio, active && styles.radioActive]}>{active ? <View style={styles.radioDot} /> : null}</View></Pressable>; })}</View></Pressable></SafeAreaView></Pressable></Modal></View>;
+function sameStatuses(left: readonly CaptureStatus[], right: readonly CaptureStatus[]) {
+  return left.length === right.length && left.every((status) => right.includes(status));
+}
+
+export function VaultToolbar({ filters, onFiltersChange, onQueryChange, query }: {
+  filters: VaultFilters;
+  onFiltersChange(next: VaultFilters): void;
+  onQueryChange(value: string): void;
+  query: string;
+}) {
+  const setStatuses = (statuses: readonly CaptureStatus[]) => onFiltersChange({ ...filters, statuses });
+  return (
+    <View style={styles.toolbar}>
+      <View style={styles.search}>
+        <Search color={colors.inkMuted} size={19} weight="bold" />
+        <TextInput
+          accessibilityLabel="Search ideas by title, summary, or original words"
+          autoCapitalize="none"
+          autoCorrect={false}
+          onChangeText={onQueryChange}
+          placeholder="Search your ideas"
+          placeholderTextColor={colors.inkMuted}
+          returnKeyType="search"
+          style={styles.input}
+          value={query}
+        />
+      </View>
+
+      <View accessibilityLabel="Starred ideas filter" accessibilityRole="radiogroup" style={styles.chips}>
+        <FilterChip active={!filters.starredOnly} label="All ideas" onPress={() => onFiltersChange({ ...filters, starredOnly: false })} />
+        <FilterChip active={filters.starredOnly} label="Starred" onPress={() => onFiltersChange({ ...filters, starredOnly: true })} />
+      </View>
+
+      <View accessibilityLabel="Idea status filter" accessibilityRole="radiogroup" style={styles.chips}>
+        {statusFilters.map((filter) => <FilterChip
+          active={sameStatuses(filters.statuses, filter.statuses)}
+          key={filter.label}
+          label={filter.label}
+          onPress={() => setStatuses(filter.statuses)}
+        />)}
+      </View>
+
+      <View accessibilityLabel="Sort ideas" accessibilityRole="radiogroup" style={styles.sorts}>
+        <Text style={styles.sortLabel}>Sort</Text>
+        <View style={styles.sortOptions}>
+          {sortOptions.map((option) => <FilterChip
+            active={filters.sort === option.value}
+            key={option.value}
+            label={option.label}
+            onPress={() => onFiltersChange({ ...filters, sort: option.value })}
+          />)}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function FilterChip({ active, label, onPress }: { active: boolean; label: string; onPress(): void }) {
+  return <Pressable
+    accessibilityRole="radio"
+    accessibilityState={{ checked: active }}
+    onPress={onPress}
+    style={({ pressed }) => [styles.chip, active && styles.chipActive, pressed && styles.pressed]}
+  ><Text style={[styles.chipLabel, active && styles.chipLabelActive]}>{label}</Text></Pressable>;
 }
 
 const styles = StyleSheet.create({
-  toolbar: { gap: 10, marginTop: 22 }, search: { height: 48, flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 15, borderWidth: 1, borderColor: colors.line, borderRadius: radii.pill, backgroundColor: colors.canvas }, input: { flex: 1, color: colors.ink, fontFamily: onboardingFonts.bodyRegular, fontSize: 13 },
-  filters: { flexDirection: 'row', gap: 8 }, filter: { height: 34, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 15, borderRadius: radii.pill, backgroundColor: colors.surfaceMuted }, filterMenu: { marginLeft: 'auto' }, filterActive: { backgroundColor: colors.ink }, filterLabel: { color: colors.inkMuted, fontFamily: onboardingFonts.bodySemiBold, fontSize: 10 }, filterLabelActive: { color: colors.inkInverse }, pressed: { opacity: 0.68 },
-  statusActive: { backgroundColor: colors.primary }, statusLabel: { color: colors.ink }, backdrop: { flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(28,28,28,0.28)' }, sheet: { paddingHorizontal: 20, paddingTop: 10, paddingBottom: 10, borderTopLeftRadius: radii.panel, borderTopRightRadius: radii.panel, backgroundColor: colors.canvas }, handle: { width: 38, height: 4, alignSelf: 'center', borderRadius: 2, backgroundColor: colors.lineStrong }, sheetTitle: { marginTop: 20, color: colors.ink, fontFamily: onboardingFonts.displayBold, fontSize: 24 }, sheetBody: { marginTop: 4, color: colors.inkMuted, fontFamily: onboardingFonts.bodyRegular, fontSize: 12 }, statuses: { gap: 8, marginTop: 18, marginBottom: 12 }, statusRow: { minHeight: 66, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15, borderRadius: radii.medium, backgroundColor: colors.canvasSoft }, statusRowActive: { backgroundColor: colors.primarySoft }, statusCopy: { flex: 1, gap: 2 }, statusTitle: { color: colors.ink, fontFamily: onboardingFonts.bodyBold, fontSize: 14 }, statusSupporting: { color: colors.inkMuted, fontFamily: onboardingFonts.bodyRegular, fontSize: 10 }, radio: { width: 20, height: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.lineStrong, borderRadius: 10 }, radioActive: { borderColor: colors.ink }, radioDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: colors.ink },
+  toolbar: { gap: 10, marginTop: 22 },
+  search: { minHeight: 50, flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 15, borderWidth: 1, borderColor: colors.line, borderRadius: radii.pill, backgroundColor: colors.canvas },
+  input: { flex: 1, minHeight: 48, color: colors.ink, fontFamily: onboardingFonts.bodyRegular, fontSize: 15 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { minHeight: 48, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, borderRadius: radii.pill, backgroundColor: colors.surfaceMuted },
+  chipActive: { backgroundColor: colors.primary },
+  chipLabel: { color: colors.inkSecondary, fontFamily: onboardingFonts.bodySemiBold, fontSize: 12 },
+  chipLabelActive: { color: colors.ink, fontFamily: onboardingFonts.bodyBold },
+  sorts: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 2 },
+  sortLabel: { color: colors.inkMuted, fontFamily: onboardingFonts.bodyBold, fontSize: 11 },
+  sortOptions: { flex: 1, flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pressed: { opacity: 0.62 },
 });

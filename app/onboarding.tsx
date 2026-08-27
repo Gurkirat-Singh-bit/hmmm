@@ -6,7 +6,7 @@
  */
 
 import { useRef } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OnboardingFooter } from '@/components/onboarding/OnboardingFooter';
@@ -20,8 +20,8 @@ export default function OnboardingScreen() {
   const { height } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
 
-  const moveForward = () => {
-    if (flow.next()) {
+  const moveForward = async () => {
+    if (await flow.next()) {
       scrollRef.current?.scrollTo({ animated: true, y: 0 });
     } else {
       scrollRef.current?.scrollToEnd({ animated: true });
@@ -35,19 +35,19 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.keyboard}>
+      <KeyboardAvoidingView behavior="height" style={styles.keyboard}>
         <View style={styles.topBar}>
           <Text style={styles.stepCount}>{flow.step + 1} OF {onboardingStepCount}</Text>
-          <View style={styles.progressTrack}>
+          <View accessibilityLabel={`Onboarding step ${flow.step + 1} of ${onboardingStepCount}`} accessibilityRole="progressbar" accessibilityValue={{ min: 1, max: onboardingStepCount, now: flow.step + 1 }} style={styles.progressTrack}>
             <View style={[styles.progress, { width: `${((flow.step + 1) / onboardingStepCount) * 100}%` }]} />
           </View>
         </View>
 
         <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" ref={scrollRef} showsVerticalScrollIndicator={false} style={styles.scroller}>
-          <OnboardingStepContent compact={height < 740} flow={flow} onNameFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)} onNameSubmit={moveForward} />
+          <OnboardingStepContent compact={height < 740} flow={flow} onNameFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)} onNameSubmit={() => void moveForward()} />
         </ScrollView>
 
-        <OnboardingFooter complete={flow.stepComplete} onBack={moveBack} onContinue={flow.step === onboardingStepCount - 1 ? () => void flow.finish() : moveForward} saving={flow.saving} step={flow.step} />
+        <OnboardingFooter complete={flow.stepComplete} onBack={moveBack} onContinue={flow.step === onboardingStepCount - 1 ? () => void flow.finish() : () => void moveForward()} saving={flow.saving} step={flow.step} />
       </KeyboardAvoidingView>
       <OnboardingNotice notice={flow.notice} onClose={() => flow.setNotice(null)} />
     </SafeAreaView>

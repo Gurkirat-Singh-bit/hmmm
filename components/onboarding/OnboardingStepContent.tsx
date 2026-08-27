@@ -5,11 +5,17 @@
  * @license MIT
  */
 
-import { KeyIcon as Key } from 'phosphor-react-native';
 import { useEffect, useRef } from 'react';
-import { Animated, Image, StyleSheet, Text, View } from 'react-native';
+import { AccessibilityInfo, Animated, Image, StyleSheet, Text, View } from 'react-native';
 
-import { EndpointField, NameField, ProviderChoices, SecretField } from '@/components/onboarding/OnboardingFields';
+import {
+  EndpointField,
+  MicrophonePermissionCard,
+  NameField,
+  ProviderChoices,
+  ResearchTransferChoices,
+  SecretField,
+} from '@/components/onboarding/OnboardingFields';
 import { SearchableModelPicker } from '@/components/onboarding/SearchableModelPicker';
 import { colors, onboardingFonts, radii } from '@/constants/theme';
 import { aiProviders, findAiProvider, findSpeechProvider, speechProviders } from '@/features/onboarding/provider-config';
@@ -22,7 +28,6 @@ const illustrations = [
   require('@/assets/Onboarding/Onboarding-1.png'),
   require('@/assets/Onboarding/Onboarding-2.png'),
   require('@/assets/Onboarding/Onboarding-3.png'),
-  require('@/assets/Onboarding/Onboarding-4.png'),
 ] as const;
 
 export function OnboardingStepContent({ flow, compact, onNameFocus, onNameSubmit }: {
@@ -34,8 +39,19 @@ export function OnboardingStepContent({ flow, compact, onNameFocus, onNameSubmit
   const { step } = flow;
   const copy = getStepCopy(step, flow.name);
   const entrance = useRef(new Animated.Value(1)).current;
+  const reduceMotion = useRef(false);
 
   useEffect(() => {
+    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => { reduceMotion.current = enabled; });
+    const subscription = AccessibilityInfo.addEventListener('reduceMotionChanged', (enabled) => { reduceMotion.current = enabled; });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    if (reduceMotion.current) {
+      entrance.setValue(1);
+      return;
+    }
     entrance.setValue(0);
     Animated.timing(entrance, {
       duration: 180,
@@ -58,10 +74,12 @@ export function OnboardingStepContent({ flow, compact, onNameFocus, onNameSubmit
         <Text accessibilityRole="header" style={styles.heading}>{copy.heading}</Text>
         <Text style={styles.body}>{copy.body}</Text>
       </View>
-      {step === 0 ? <NameField attempted={flow.attempted} onChangeText={flow.setName} onFocus={onNameFocus} onSubmit={onNameSubmit} value={flow.name} /> : null}
+      {step === 0 ? <>
+        <NameField attempted={flow.attempted} onChangeText={flow.setName} onFocus={onNameFocus} onSubmit={onNameSubmit} value={flow.name} />
+        <MicrophonePermissionCard permission={flow.microphonePermission} onRequest={() => void flow.requestMicrophone()} />
+      </> : null}
       {step === 1 ? <SpeechSetup flow={flow} /> : null}
       {step === 2 ? <AiSetup flow={flow} /> : null}
-      {step === 3 ? <Review flow={flow} /> : null}
     </Animated.View>
   );
 }
@@ -71,13 +89,14 @@ function SpeechSetup({ flow }: { flow: Flow }) {
   const catalog = useModelCatalog('speech', provider, flow.speechKey, flow.speechEndpoint);
   return <View style={styles.setup}>
     <View style={styles.setupSection}>
-      <ProviderChoices options={speechProviders} value={flow.speechProvider} onChange={(providerId) => { flow.setSpeechProvider(providerId); flow.setSpeechModel(findSpeechProvider(providerId).starterModels[0] ?? ''); }} />
+      <ProviderChoices options={speechProviders} value={flow.speechProvider} onChange={(providerId) => { flow.setSpeechProvider(providerId); flow.setSpeechModel(findSpeechProvider(providerId).starterModels[0] ?? ''); if (providerId !== flow.speechProvider) { flow.setSpeechKey(''); flow.setSpeechEndpoint(''); } }} />
     </View>
     <View style={styles.setupSection}>
-      {flow.speechProvider === 'custom' ? <EndpointField onChangeText={flow.setSpeechEndpoint} value={flow.speechEndpoint} /> : null}
+      {flow.speechProvider === 'custom' ? <EndpointField attempted={flow.attempted} onChangeText={flow.setSpeechEndpoint} value={flow.speechEndpoint} /> : null}
       <SecretField attempted={flow.attempted} label="SPEECH API KEY" onChangeText={flow.setSpeechKey} placeholder="Paste speech API key" value={flow.speechKey} />
       <SearchableModelPicker error={catalog.error} label="MODEL" loading={catalog.loading} onChange={flow.setSpeechModel} onRefresh={catalog.canRefresh ? catalog.refresh : undefined} options={catalog.models} value={flow.speechModel} />
     </View>
+    <Text style={styles.transferNote}>After you finish a recording, its source audio is sent directly to {provider.label} for transcription. Hmmmidea does not relay it through its own server.</Text>
   </View>;
 }
 
@@ -86,35 +105,23 @@ function AiSetup({ flow }: { flow: Flow }) {
   const catalog = useModelCatalog('ai', provider, flow.aiKey, flow.aiEndpoint);
   return <View style={styles.setup}>
     <View style={styles.setupSection}>
-      <ProviderChoices options={aiProviders} value={flow.aiProvider} onChange={(providerId) => { flow.setAiProvider(providerId); flow.setAiModel(findAiProvider(providerId).starterModels[0] ?? ''); }} />
+      <ProviderChoices options={aiProviders} value={flow.aiProvider} onChange={(providerId) => { flow.setAiProvider(providerId); flow.setAiModel(findAiProvider(providerId).starterModels[0] ?? ''); if (providerId !== flow.aiProvider) { flow.setAiKey(''); flow.setAiEndpoint(''); } }} />
     </View>
     <View style={styles.setupSection}>
-      {flow.aiProvider === 'custom' ? <EndpointField onChangeText={flow.setAiEndpoint} value={flow.aiEndpoint} /> : null}
+      {flow.aiProvider === 'custom' ? <EndpointField attempted={flow.attempted} onChangeText={flow.setAiEndpoint} value={flow.aiEndpoint} /> : null}
       <SecretField attempted={flow.attempted} label="LLM API KEY" onChangeText={flow.setAiKey} placeholder="Paste LLM API key" value={flow.aiKey} />
       <SearchableModelPicker error={catalog.error} label="MODEL" loading={catalog.loading} onChange={flow.setAiModel} onRefresh={catalog.canRefresh ? catalog.refresh : undefined} options={catalog.models} value={flow.aiModel} />
     </View>
+    <Text style={styles.transferNote}>Your transcript is sent directly to {provider.label} for reports and discussion. It does not pass through a Hmmmidea account or backend.</Text>
+    <ResearchTransferChoices attempted={flow.attempted} onChange={flow.setResearchConsent} value={flow.researchConsent} />
   </View>;
-}
-
-function Review({ flow }: { flow: Flow }) {
-  return <View style={styles.summaryCard}>
-    <SummaryRow label="NAME" value={flow.name.trim()} /><View style={styles.divider} />
-    <SummaryRow label="SPEECH" value={`${flow.speechProvider} · ${flow.speechModel}`} /><View style={styles.divider} />
-    <SummaryRow label="LLM" value={`${flow.aiProvider} · ${flow.aiModel}`} />
-    <View style={styles.secureNote}><Key color={colors.ink} size={17} weight="bold" /><Text style={styles.secureText}>Both keys will be stored in protected device storage.</Text></View>
-  </View>;
-}
-
-function SummaryRow({ label, value }: { label: string; value: string }) {
-  return <View style={styles.summaryRow}><Text style={styles.summaryLabel}>{label}</Text><Text style={styles.summaryValue}>{value}</Text></View>;
 }
 
 function getStepCopy(step: Flow['step'], name: string) {
   return [
-    { heading: 'What should we call you?', body: 'This name is only used for your greeting.' },
-    { heading: 'Turn your voice into words.', body: 'Choose the speech setup used when an idea is recorded.' },
-    { heading: 'Choose how ideas are shaped.', body: 'Configure the LLM used for reports, research, and discussion.' },
-    { heading: `Ready, ${name.trim()}.`, body: 'Review the local setup before opening your idea vault.' },
+    { heading: 'Catch the thought before it goes.', body: 'Ideas and source audio stay on this Android device. Your name is only used for the greeting.' },
+    { heading: 'Turn your voice into words.', body: 'Choose the speech setup used after an idea is safely recorded.' },
+    { heading: `Shape ideas, ${name.trim() || 'your way'}.`, body: 'Configure the AI setup, then decide whether provider-native research may look things up.' },
   ][step];
 }
 
@@ -125,9 +132,5 @@ const styles = StyleSheet.create({
   heading: { maxWidth: 350, marginTop: 8, color: colors.inkInverse, fontFamily: onboardingFonts.displayBold, fontSize: 31, lineHeight: 36 },
   body: { maxWidth: 350, marginTop: 9, color: colors.darkMuted, fontFamily: onboardingFonts.bodyRegular, fontSize: 14, lineHeight: 21 },
   setup: { gap: 12, marginTop: 24 }, setupSection: { gap: 14, padding: 14, borderRadius: radii.large, backgroundColor: colors.darkSurface },
-  summaryCard: { gap: 15, marginTop: 26, padding: 19, borderRadius: radii.large, backgroundColor: colors.canvasSoft },
-  summaryRow: { gap: 5 }, summaryLabel: { color: colors.inkMuted, fontFamily: onboardingFonts.bodyBold, fontSize: 9, letterSpacing: 1 },
-  summaryValue: { color: colors.ink, fontFamily: onboardingFonts.bodySemiBold, fontSize: 14 }, divider: { height: 1, backgroundColor: colors.line },
-  secureNote: { flexDirection: 'row', alignItems: 'center', gap: 9, marginTop: 4, padding: 12, borderRadius: radii.medium, backgroundColor: colors.calmSoft },
-  secureText: { flex: 1, color: colors.ink, fontFamily: onboardingFonts.bodyMedium, fontSize: 11, lineHeight: 16 },
+  transferNote: { color: colors.darkMuted, fontFamily: onboardingFonts.bodyRegular, fontSize: 12, lineHeight: 18 },
 });

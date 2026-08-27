@@ -9,11 +9,11 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { colors, onboardingFonts, radii } from '@/constants/theme';
 
-export function IdeaContextStrip({ gist }: { gist: string }) {
+export function IdeaContextStrip({ gist }: { gist: string | null }) {
   return (
     <View style={styles.context}>
       <Text style={styles.label}>Idea gist</Text>
-      <Text style={styles.gist}>{gist}</Text>
+      <Text style={styles.gist}>{gist?.trim() || 'The saved report is not ready yet. Earlier messages remain available.'}</Text>
     </View>
   );
 }

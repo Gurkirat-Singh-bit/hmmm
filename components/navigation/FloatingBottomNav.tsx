@@ -12,10 +12,10 @@ import {
   HouseIcon as House,
 } from 'phosphor-react-native';
 import { usePathname, useRouter } from 'expo-router';
-import { useCallback, useEffect, useRef } from 'react';
-import { Animated, Easing, LayoutAnimation, Pressable, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radii } from '@/constants/theme';
+import { colors, onboardingFonts, radii, spacing } from '@/constants/theme';
 
 const tabs = [
   { label: 'Home', route: '/', icon: House },
@@ -27,62 +27,31 @@ const tabs = [
 export function FloatingBottomNav() {
   const pathname = usePathname();
   const router = useRouter();
-  const indicatorX = useRef(new Animated.Value(0)).current;
-  const indicatorWidth = useRef(new Animated.Value(0)).current;
-  const layouts = useRef<Record<string, { width: number; x: number }>>({});
-  const initialized = useRef(false);
-
-  const activeRoute = tabs.find((tab) => tab.route === '/' ? pathname === '/' : pathname.startsWith(tab.route))?.route ?? '/';
-
-  const moveIndicator = useCallback((layout: { width: number; x: number }) => {
-    if (!initialized.current) {
-      indicatorX.setValue(layout.x);
-      indicatorWidth.setValue(layout.width);
-      initialized.current = true;
-      return;
-    }
-    Animated.parallel([
-      Animated.timing(indicatorX, { duration: 160, easing: Easing.out(Easing.quad), toValue: layout.x, useNativeDriver: false }),
-      Animated.timing(indicatorWidth, { duration: 160, easing: Easing.out(Easing.quad), toValue: layout.width, useNativeDriver: false }),
-    ]).start();
-  }, [indicatorWidth, indicatorX]);
-
-  useEffect(() => {
-    const layout = layouts.current[activeRoute];
-    if (layout) moveIndicator(layout);
-  }, [activeRoute, moveIndicator]);
+  const insets = useSafeAreaInsets();
 
   const goTo = (route: (typeof tabs)[number]['route']) => {
     if (pathname === route) return;
-    LayoutAnimation.configureNext({
-      duration: 160,
-      update: { type: LayoutAnimation.Types.easeInEaseOut },
-    });
     router.replace(route);
   };
 
   return (
-    <View pointerEvents="box-none" style={styles.wrapper}>
-      <View accessibilityRole="tablist" style={styles.nav}>
-        <Animated.View pointerEvents="none" style={[styles.indicator, { left: indicatorX, width: indicatorWidth }]} />
+    <View pointerEvents="box-none" style={[styles.wrapper, { paddingBottom: Math.max(12, insets.bottom + 8) }]}>
+      <View accessibilityLabel="Primary navigation" accessibilityRole="tablist" style={styles.nav}>
         {tabs.map((tab) => {
-          const active = tab.route === '/' ? pathname === '/' : pathname.startsWith(tab.route);
+          const active = matchesRoute(pathname, tab.route);
           const Icon = tab.icon;
           return (
             <Pressable
               accessibilityLabel={tab.label}
+              accessibilityHint={`Open ${tab.label}`}
               accessibilityRole="tab"
               accessibilityState={{ selected: active }}
               key={tab.route}
-              onLayout={({ nativeEvent: { layout } }: LayoutChangeEvent) => {
-                layouts.current[tab.route] = { width: layout.width, x: layout.x };
-                if (active) moveIndicator(layout);
-              }}
               onPress={() => goTo(tab.route)}
               style={({ pressed }) => [styles.tab, active && styles.activeTab, pressed && styles.pressed]}
             >
-              <Icon color={active ? colors.ink : colors.inkInverse} size={20} weight="bold" />
-              {active ? <Text style={styles.activeLabel}>{tab.label}</Text> : null}
+              <Icon color={colors.ink} size={20} weight={active ? 'bold' : 'regular'} />
+              <Text style={styles.label}>{tab.label}</Text>
             </Pressable>
           );
         })}
@@ -92,19 +61,22 @@ export function FloatingBottomNav() {
 }
 
 const styles = StyleSheet.create({
-  wrapper: { position: 'absolute', right: 0, bottom: 18, left: 0, zIndex: 100, alignItems: 'center' },
+  wrapper: { position: 'absolute', right: 0, bottom: 0, left: 0, zIndex: 100, alignItems: 'center', paddingHorizontal: spacing.page },
   nav: {
-    position: 'relative', width: 286, minHeight: 62, flexDirection: 'row', alignItems: 'center', padding: 6,
-    borderRadius: radii.pill, backgroundColor: colors.darkCanvas,
-    shadowColor: '#000000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.16,
-    shadowRadius: 14, elevation: 8,
+    width: '100%', maxWidth: 380, minHeight: 68, flexDirection: 'row', alignItems: 'center', gap: 4, padding: 6,
+    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line, borderRadius: radii.large, backgroundColor: colors.canvas,
+    shadowColor: colors.ink, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12,
+    shadowRadius: 12, elevation: 4,
   },
   tab: {
-    zIndex: 1, width: 54, height: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    gap: 7, borderRadius: radii.pill,
+    minWidth: 48, minHeight: 54, flex: 1, alignItems: 'center', justifyContent: 'center',
+    gap: 2, borderRadius: radii.medium,
   },
-  activeTab: { width: 112, paddingHorizontal: 12 },
-  indicator: { position: 'absolute', top: 6, height: 50, borderRadius: radii.pill, backgroundColor: colors.canvas },
-  activeLabel: { color: colors.ink, fontSize: 13, fontWeight: '600' },
+  activeTab: { backgroundColor: colors.primary },
+  label: { color: colors.inkSecondary, fontFamily: onboardingFonts.bodySemiBold, fontSize: 10, textAlign: 'center' },
   pressed: { opacity: 0.7 },
 });
+
+function matchesRoute(pathname: string, route: (typeof tabs)[number]['route']) {
+  return route === '/' ? pathname === '/' : pathname === route || pathname.startsWith(`${route}/`);
+}

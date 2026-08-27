@@ -15,18 +15,20 @@ export function useModelCatalog(kind: CatalogKind, provider: ProviderDefinition,
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestId = useRef(0);
-  const canRefresh = provider.id === 'custom' ? Boolean(endpoint.trim()) : Boolean(provider.modelsUrl);
+  const canRefresh = Boolean(provider.modelsUrl);
 
   const load = useCallback(async (refresh = false) => {
     const currentRequest = ++requestId.current;
-    const needsKey = !['none', 'optional-bearer'].includes(provider.authentication);
-    if ((needsKey && !apiKey.trim()) || (provider.id === 'custom' && !endpoint.trim())) {
+    if (provider.id === 'custom') {
+      setModels([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+    const needsKey = provider.authentication !== 'optional-bearer';
+    if (needsKey && !apiKey.trim()) {
       setModels(cachedModels(kind, provider));
-      setError(
-        provider.id === 'custom' && !endpoint.trim()
-          ? 'Add the provider base URL before searching its model catalog.'
-          : `Add your ${provider.label} API key to search its full model catalog.`,
-      );
+      setError(`Add your ${provider.label} API key to search its full model catalog.`);
       setLoading(false);
       return;
     }
@@ -50,13 +52,11 @@ export function useModelCatalog(kind: CatalogKind, provider: ProviderDefinition,
   useEffect(() => {
     setModels(cachedModels(kind, provider));
     setLoading(false);
-    const canLoadWithoutCredentials = canRefresh && ['none', 'optional-bearer'].includes(provider.authentication);
+    const canLoadWithoutCredentials = canRefresh && provider.authentication === 'optional-bearer';
     if (!canLoadWithoutCredentials) {
-      const needsKey = !['none', 'optional-bearer'].includes(provider.authentication);
+      const needsKey = provider.authentication !== 'optional-bearer';
       setError(
-        provider.id === 'custom' && !endpoint.trim()
-          ? 'Add the provider base URL before searching its model catalog.'
-          : canRefresh && needsKey && !apiKey.trim()
+        canRefresh && needsKey && !apiKey.trim()
           ? `Add your ${provider.label} API key to search its full model catalog.`
           : null,
       );

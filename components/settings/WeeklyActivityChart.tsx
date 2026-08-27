@@ -10,17 +10,12 @@ import { colors, onboardingFonts, radii } from '@/constants/theme';
 
 export type DailyActivity = { day: string; value: number };
 
-const previewActivity: DailyActivity[] = [
-  { day: 'Mon', value: 2 }, { day: 'Tue', value: 4 }, { day: 'Wed', value: 3 },
-  { day: 'Thu', value: 6 }, { day: 'Fri', value: 4 }, { day: 'Sat', value: 7 }, { day: 'Sun', value: 5 },
-];
-
-export function WeeklyActivityChart({ data = previewActivity }: { data?: readonly DailyActivity[] }) {
+export function WeeklyActivityChart({ data }: { data: readonly DailyActivity[] }) {
   const maximum = Math.max(...data.map((item) => item.value), 1);
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <View accessibilityLabel={`${total} ideas captured this week`} style={styles.card}>
+    <View accessible accessibilityLabel={`${total} ideas captured this week. ${data.map((item) => `${item.day}: ${item.value}`).join(', ')}`} style={styles.card}>
       <View style={styles.header}>
         <View><Text style={styles.kicker}>THIS WEEK</Text><Text style={styles.title}>Your activity</Text></View>
         <View style={styles.total}><Text style={styles.totalValue}>{total}</Text><Text style={styles.totalLabel}>IDEAS</Text></View>

@@ -12,13 +12,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { DiscussionList } from '@/components/discuss/DiscussionList';
 import { MainBrandHeader } from '@/components/MainBrandHeader';
 import { colors, onboardingFonts, spacing } from '@/constants/theme';
-import { previewThreadSummaries } from '@/features/discussion/discussion-preview';
-import { previewVaultIdeas } from '@/features/vault/vault-preview';
-
-const readyIdeas = previewVaultIdeas.filter((idea) => idea.status === 'ready');
+import { useDiscussionHome } from '@/features/discussion/use-discussion';
 
 export default function DiscussScreen() {
   const router = useRouter();
+  const discussion = useDiscussionHome();
   const openThread = (ideaId: string) => router.push({ pathname: '/discuss/[ideaId]', params: { ideaId } });
 
   return (
@@ -26,7 +24,14 @@ export default function DiscussScreen() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <MainBrandHeader />
         <View style={styles.heading}><Text accessibilityRole="header" style={styles.title}>Discuss</Text><Text style={styles.supporting}>Discuss through a saved idea with AI</Text></View>
-        <DiscussionList ideas={readyIdeas} onOpen={openThread} threads={previewThreadSummaries} />
+        <DiscussionList
+          captures={discussion.captures}
+          error={discussion.error}
+          loading={discussion.loading}
+          onOpen={openThread}
+          onRetry={discussion.refresh}
+          threads={discussion.threads}
+        />
       </ScrollView>
     </SafeAreaView>
   );

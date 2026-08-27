@@ -52,15 +52,15 @@ export function SearchableModelPicker({ error, label, light = false, loading, op
       <View style={styles.group}>
         <View style={styles.labelRow}>
           <Text style={[styles.label, light && styles.lightMutedText]}>{label}</Text>
-          {onRefresh ? <Pressable accessibilityLabel="Sync model catalog" disabled={loading} onPress={onRefresh} style={({ pressed }) => [styles.syncButton, pressed && styles.pressed]}>
+          {onRefresh ? <Pressable accessibilityHint="Fetches the provider’s current model list." accessibilityLabel="Sync model catalog" accessibilityRole="button" accessibilityState={{ busy: loading, disabled: loading }} disabled={loading} onPress={onRefresh} style={({ pressed }) => [styles.syncButton, pressed && styles.pressed]}>
             <ArrowClockwise color={colors.darkMuted} size={13} weight="bold" />
             <Text style={styles.syncText}>{loading ? 'SYNCING' : 'SYNC CATALOG'}</Text>
           </Pressable> : null}
         </View>
-        <Pressable accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(true)} style={({ pressed }) => [styles.trigger, light && styles.triggerLight, pressed && styles.pressed]}>
+        <Pressable accessibilityHint="Opens a searchable list of provider model IDs." accessibilityLabel={`${label}: ${value || 'no model selected'}`} accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(true)} style={({ pressed }) => [styles.trigger, light && styles.triggerLight, pressed && styles.pressed]}>
           <View style={styles.triggerCopy}>
-            <Text numberOfLines={1} style={[styles.value, light && styles.lightText, !value && styles.placeholder]}>{value || 'Choose a model'}</Text>
-            <Text numberOfLines={1} style={[styles.hint, light && styles.lightMutedText]}>{loading ? 'Loading current models…' : `${options.length} models available · Tap to search`}</Text>
+            <Text style={[styles.value, light && styles.lightText, !value && styles.placeholder]}>{value || 'Choose a model'}</Text>
+            <Text style={[styles.hint, light && styles.lightMutedText]}>{loading ? 'Loading current models…' : `${options.length} models available · Tap to search`}</Text>
           </View>
           <CaretDown color={colors.darkMuted} size={18} weight="bold" />
         </Pressable>
@@ -71,14 +71,14 @@ export function SearchableModelPicker({ error, label, light = false, loading, op
       </View>
 
       <Modal animationType="slide" onRequestClose={() => setOpen(false)} visible={open}>
-        <SafeAreaView style={styles.modal}>
+        <SafeAreaView accessibilityViewIsModal style={styles.modal}>
           <View style={styles.header}>
             <View><Text style={styles.modalKicker}>MODEL CATALOG · {options.length}</Text><Text style={styles.modalTitle}>Choose a model</Text></View>
-            <Pressable accessibilityLabel="Close model picker" onPress={() => setOpen(false)} style={styles.close}><X color={colors.ink} size={20} weight="bold" /></Pressable>
+            <Pressable accessibilityLabel="Close model picker" accessibilityRole="button" onPress={() => setOpen(false)} style={styles.close}><X color={colors.ink} size={20} weight="bold" /></Pressable>
           </View>
           <View style={styles.search}>
             <MagnifyingGlass color={colors.inkMuted} size={19} weight="bold" />
-            <TextInput autoCapitalize="none" autoCorrect={false} autoFocus onChangeText={setQuery} placeholder="Search model or paste exact ID" placeholderTextColor={colors.inkMuted} style={styles.searchInput} value={query} />
+            <TextInput accessibilityHint="Type to filter models or enter an exact model ID." accessibilityLabel="Search models" autoCapitalize="none" autoCorrect={false} autoFocus onChangeText={setQuery} placeholder="Search model or paste exact ID" placeholderTextColor={colors.inkMuted} style={styles.searchInput} value={query} />
           </View>
           <FlatList
             contentContainerStyle={styles.list}
@@ -90,9 +90,9 @@ export function SearchableModelPicker({ error, label, light = false, loading, op
               const selected = item === value;
               const isCustom = custom && index === 0;
               return (
-                <Pressable onPress={() => choose(item)} style={({ pressed }) => [styles.row, selected && styles.rowSelected, pressed && styles.pressed]}>
+                <Pressable accessibilityLabel={`${item}${selected ? ', selected' : ''}`} accessibilityRole="radio" accessibilityState={{ checked: selected }} onPress={() => choose(item)} style={({ pressed }) => [styles.row, selected && styles.rowSelected, pressed && styles.pressed]}>
                   <View style={styles.rowCopy}>
-                    <Text numberOfLines={2} style={styles.rowValue}>{item}</Text>
+                    <Text style={styles.rowValue}>{item}</Text>
                     {isCustom ? <Text style={styles.custom}>USE CUSTOM MODEL ID</Text> : selected ? <Text style={styles.custom}>SELECTED MODEL</Text> : null}
                   </View>
                   {selected ? <Check color={colors.ink} size={18} weight="bold" /> : null}
@@ -108,7 +108,7 @@ export function SearchableModelPicker({ error, label, light = false, loading, op
 
 const styles = StyleSheet.create({
   group: { gap: 9 }, labelRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, label: { color: colors.darkMuted, fontFamily: onboardingFonts.bodyBold, fontSize: 10, letterSpacing: 1.1 },
-  syncButton: { minHeight: 28, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, borderRadius: radii.pill, backgroundColor: colors.darkCanvas },
+  syncButton: { minHeight: 48, flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, borderRadius: radii.pill, backgroundColor: colors.darkCanvas },
   syncText: { color: colors.darkMuted, fontFamily: onboardingFonts.bodyBold, fontSize: 8, letterSpacing: 0.6 },
   trigger: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.darkLine, borderRadius: radii.medium, backgroundColor: colors.darkCanvas },
   triggerCopy: { flex: 1, gap: 3 }, value: { color: colors.inkInverse, fontFamily: onboardingFonts.bodySemiBold, fontSize: 14 }, placeholder: { color: colors.darkMuted }, hint: { color: colors.darkMuted, fontFamily: onboardingFonts.bodyRegular, fontSize: 10 }, pressed: { opacity: 0.7 },
@@ -116,7 +116,7 @@ const styles = StyleSheet.create({
   errorText: { flex: 1, color: colors.ink, fontFamily: onboardingFonts.bodyMedium, fontSize: 10, lineHeight: 15 },
   modal: { flex: 1, backgroundColor: colors.canvas }, header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.page, paddingTop: 12, paddingBottom: 18 },
   modalKicker: { color: colors.inkMuted, fontFamily: onboardingFonts.bodyBold, fontSize: 9, letterSpacing: 1.2 }, modalTitle: { marginTop: 5, color: colors.ink, fontFamily: onboardingFonts.displayBold, fontSize: 25 },
-  close: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 23, backgroundColor: colors.surfaceMuted },
+  close: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 24, backgroundColor: colors.surfaceMuted },
   search: { minHeight: 52, flexDirection: 'row', alignItems: 'center', gap: 10, marginHorizontal: spacing.page, paddingHorizontal: 16, borderRadius: radii.medium, backgroundColor: colors.surfaceMuted },
   searchInput: { flex: 1, color: colors.ink, fontFamily: onboardingFonts.bodyRegular, fontSize: 15 }, list: { paddingHorizontal: spacing.page, paddingTop: 14, paddingBottom: 32 },
   row: { minHeight: 62, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 15, borderBottomWidth: 1, borderBottomColor: colors.line },

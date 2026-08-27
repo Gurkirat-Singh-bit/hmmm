@@ -8,7 +8,7 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { colors, onboardingFonts, radii } from '@/constants/theme';
-import { discussionPromptSuggestions } from '@/features/discussion/discussion-preview';
+import { discussionPromptSuggestions } from '@/features/discussion/discussion-prompts';
 
 export function DiscussionPromptChips({ disabled, onChoose }: { disabled: boolean; onChoose(prompt: string): void }) {
   return (
@@ -37,7 +37,7 @@ const styles = StyleSheet.create({
   wrap: { gap: 8 },
   label: { paddingHorizontal: 20, color: colors.inkMuted, fontFamily: onboardingFonts.bodyBold, fontSize: 9, letterSpacing: 0.9 },
   chips: { gap: 8, paddingHorizontal: 20, paddingBottom: 2 },
-  chip: { minHeight: 44, justifyContent: 'center', paddingHorizontal: 16, borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radii.pill, backgroundColor: colors.canvas },
+  chip: { minHeight: 48, justifyContent: 'center', paddingHorizontal: 16, borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radii.pill, backgroundColor: colors.canvas },
   chipText: { color: colors.ink, fontFamily: onboardingFonts.bodySemiBold, fontSize: 12 },
   disabled: { opacity: 0.45 },
   pressed: { backgroundColor: colors.primarySoft },

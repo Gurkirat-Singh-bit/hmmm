@@ -9,7 +9,7 @@ import { PaperPlaneTiltIcon as PaperPlaneTilt } from 'phosphor-react-native';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { colors, onboardingFonts, radii } from '@/constants/theme';
-import type { DiscussionAvailability } from '@/features/discussion/discussion-preview';
+import type { DiscussionAvailability } from '@/features/discussion/discussion-service';
 
 export function DiscussionComposer({
   availability,
@@ -29,17 +29,17 @@ export function DiscussionComposer({
 
   return (
     <View style={styles.shell}>
-      {availability === 'offline' ? <AvailabilityNotice text="Offline. Saved messages are available." /> : null}
-      {availability === 'missing-provider' ? <AvailabilityNotice text="Add an AI provider to continue." /> : null}
+      {availability === 'offline' ? <AvailabilityNotice text="Offline. Read saved messages and keep drafting, then send when you reconnect." /> : null}
+      {availability === 'missing-provider' ? <AvailabilityNotice text="Add an AI provider to send this saved draft." /> : null}
       <View style={[styles.composer, unavailable && styles.composerDisabled]}>
         <TextInput
           accessibilityLabel="Message about this idea"
           autoCorrect
-          editable={!unavailable && !sending}
+          editable
           maxLength={1200}
           multiline
           onChangeText={onChange}
-          placeholder={availability === 'ready' ? 'Ask about this idea…' : 'Discussion is unavailable'}
+          placeholder="Ask about this idea…"
           placeholderTextColor={colors.inkMuted}
           returnKeyType="default"
           scrollEnabled
@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   composer: { minHeight: 56, maxHeight: 132, flexDirection: 'row', alignItems: 'flex-end', gap: 8, paddingLeft: 16, paddingRight: 5, paddingVertical: 5, borderWidth: 1, borderColor: colors.lineStrong, borderRadius: 22, backgroundColor: colors.canvasSoft },
   composerDisabled: { backgroundColor: colors.surfaceMuted },
   input: { flex: 1, minHeight: 44, maxHeight: 116, paddingTop: 11, paddingBottom: 10, color: colors.ink, fontFamily: onboardingFonts.bodyRegular, fontSize: 14, lineHeight: 20 },
-  send: { width: 46, height: 46, alignItems: 'center', justifyContent: 'center', borderRadius: 23, backgroundColor: colors.ink },
+  send: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 24, backgroundColor: colors.ink },
   sendDisabled: { opacity: 0.28 },
   pressed: { opacity: 0.7 },
 });

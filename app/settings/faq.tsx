@@ -13,11 +13,13 @@ import { colors, onboardingFonts, radii } from '@/constants/theme';
 
 const questions = [
   { question: 'Where are my ideas stored?', answer: 'Your ideas stay on this device. The app does not require a Hmmmidea account or backend.' },
-  { question: 'Why do I need provider keys?', answer: 'Your chosen speech and AI providers process transcription and generated reports directly. Keys are stored in protected device storage.' },
+  { question: 'Why do I need provider keys?', answer: 'Your chosen speech and AI providers process transcription and generated reports directly. Keys are stored in versioned Android protected credential storage, never in the app database or exports.' },
   { question: 'Can I change providers later?', answer: 'Yes. Open Providers & models from Settings whenever you want to replace a provider, model, endpoint, or key.' },
   { question: 'Does Hmmmidea require an account?', answer: 'No. The initial app has no required Hmmmidea account, application backend, or cloud sync. Your device is the source of truth.' },
   { question: 'What happens when a provider request fails?', answer: 'Your local capture should remain safe. Failed transcription or analysis work can be retried after checking the provider key, model, endpoint, or network connection.' },
   { question: 'Are my API keys included in exports?', answer: 'No. API keys are deliberately excluded from exports and ordinary logs. They remain in protected device credential storage.' },
+  { question: 'What can research send to my provider?', answer: 'Only after you allow it, Hmmmidea can send a query derived from your transcript and relevant transcript context to your chosen AI provider’s own grounding or search tools. You can withdraw that consent in Settings.' },
+  { question: 'Can I remove ideas without losing my setup?', answer: 'Yes. Data controls lets you delete ideas and retained audio while keeping provider choices and credentials. Full reset removes ideas, preferences, and every versioned credential slot.' },
   { question: 'Can I use a custom provider?', answer: 'Yes. Choose Custom, enter a compatible base URL, provide its key, and select or enter the exact model ID expected by that endpoint.' },
   { question: 'What does the activity chart represent?', answer: 'It is the UI for a seven-day capture summary. It will use locally recorded capture counts when the recording and database layer are connected.' },
 ] as const;

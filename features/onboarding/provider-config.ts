@@ -11,18 +11,18 @@ export type ProviderDefinition<Id extends string = string> = {
   label: string;
   description: string;
   modelsUrl: string | null;
-  authentication: 'none' | 'optional-bearer' | 'bearer' | 'anthropic' | 'google' | 'custom';
+  authentication: 'optional-bearer' | 'bearer' | 'deepgram' | 'anthropic' | 'google' | 'custom';
   starterModels: readonly string[];
 };
 
 /** Speech providers supported by the onboarding configuration flow. */
 export const speechProviders = [
-  { id: 'deepgram', label: 'Deepgram', description: 'Live, low-latency transcription', modelsUrl: 'https://api.deepgram.com/v1/models', authentication: 'none', starterModels: ['nova-3', 'nova-2', 'whisper'] },
+  { id: 'deepgram', label: 'Deepgram', description: 'Live and saved transcription', modelsUrl: 'https://api.deepgram.com/v1/models', authentication: 'deepgram', starterModels: ['nova-3', 'nova-2', 'whisper'] },
   { id: 'groq', label: 'Groq', description: 'Very fast Whisper transcription', modelsUrl: 'https://api.groq.com/openai/v1/models', authentication: 'bearer', starterModels: ['whisper-large-v3-turbo', 'whisper-large-v3'] },
   { id: 'openai', label: 'OpenAI', description: 'OpenAI speech-to-text models', modelsUrl: 'https://api.openai.com/v1/models', authentication: 'bearer', starterModels: ['gpt-4o-mini-transcribe', 'gpt-4o-transcribe', 'whisper-1'] },
-  { id: 'openrouter', label: 'OpenRouter', description: 'Transcription models through one API', modelsUrl: 'https://openrouter.ai/api/v1/models?output_modalities=transcription', authentication: 'optional-bearer', starterModels: ['openai/whisper-large-v3', 'openai/whisper-1'] },
-  { id: 'google', label: 'Google', description: 'Google Cloud Speech-to-Text', modelsUrl: null, authentication: 'google', starterModels: ['chirp_3', 'latest_long', 'latest_short'] },
-  { id: 'custom', label: 'Custom', description: 'Any compatible speech endpoint', modelsUrl: null, authentication: 'custom', starterModels: [] },
+  { id: 'openrouter', label: 'OpenRouter', description: 'Dedicated speech-to-text routing', modelsUrl: 'https://openrouter.ai/api/v1/models?output_modalities=transcription', authentication: 'optional-bearer', starterModels: ['openai/gpt-4o-mini-transcribe', 'openai/gpt-4o-transcribe', 'openai/whisper-1'] },
+  { id: 'google', label: 'Google Gemini', description: 'Gemini audio transcription', modelsUrl: 'https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000', authentication: 'google', starterModels: ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-2.5-flash'] },
+  { id: 'custom', label: 'Custom', description: 'HTTPS OpenAI-compatible endpoint', modelsUrl: null, authentication: 'custom', starterModels: [] },
 ] as const satisfies readonly ProviderDefinition[];
 
 /** AI providers supported by report generation and discussion. */
@@ -32,7 +32,7 @@ export const aiProviders = [
   { id: 'openai', label: 'OpenAI', description: 'Models directly from OpenAI', modelsUrl: 'https://api.openai.com/v1/models', authentication: 'bearer', starterModels: ['gpt-5', 'gpt-5-mini', 'gpt-4.1', 'gpt-4.1-mini'] },
   { id: 'groq', label: 'Groq', description: 'Low-latency open models', modelsUrl: 'https://api.groq.com/openai/v1/models', authentication: 'bearer', starterModels: ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'groq/compound'] },
   { id: 'google', label: 'Google Gemini', description: 'Gemini models from Google', modelsUrl: 'https://generativelanguage.googleapis.com/v1beta/models?pageSize=1000', authentication: 'google', starterModels: ['gemini-3.7-flash', 'gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-2.5-pro'] },
-  { id: 'custom', label: 'Custom', description: 'Compatible LLM endpoint', modelsUrl: null, authentication: 'custom', starterModels: [] },
+  { id: 'custom', label: 'Custom', description: 'HTTPS OpenAI-compatible endpoint', modelsUrl: null, authentication: 'custom', starterModels: [] },
 ] as const satisfies readonly ProviderDefinition[];
 
 /** Identifier accepted for a configured speech provider. */

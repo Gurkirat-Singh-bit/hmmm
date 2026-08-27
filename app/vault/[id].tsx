@@ -1,32 +1,131 @@
-/**
- * @file [id].tsx
- * @description Dynamic Vault idea report route with an unknown-idea state.
- * @author Gurkirat Singh
- * @license MIT
- */
-
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, ScrollView, Share, StyleSheet, Text } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ScrollView, StyleSheet, Text } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { IdeaDetailHeader } from '@/components/vault/IdeaDetailHeader';
+import { IdeaDetailState } from '@/components/vault/IdeaDetailState';
 import { IdeaReportSections } from '@/components/vault/IdeaReportSections';
 import { IdeaSourceAudio } from '@/components/vault/IdeaSourceAudio';
-import { colors, onboardingFonts, radii, spacing } from '@/constants/theme';
-import { previewIdeaReports, previewVaultIdeas } from '@/features/vault/vault-preview';
+import { RegenerationControl } from '@/components/vault/RegenerationControl';
+import { colors, onboardingFonts, spacing } from '@/constants/theme';
+import type { ReportField } from '@/features/domain/contracts';
+import { normalizeError } from '@/features/domain/errors';
+import { shareIdeaPdfExport } from '@/features/export/export-service';
+import { useIdeaDetail } from '@/features/vault/use-idea-detail';
+import { useIdeaPlayback } from '@/features/vault/use-idea-playback';
+import { openCitation, regenerateReport, saveManualReport, setCaptureStarred, shareCaptures } from '@/features/vault/vault-service';
 
 export default function IdeaDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id?: string | string[] }>();
   const router = useRouter();
-  const idea = previewVaultIdeas.find((item) => item.id === id);
-  const report = id ? previewIdeaReports[id] : undefined;
-  const [starred, setStarred] = useState(idea?.starred ?? false);
-  if (!idea || !report) return <SafeAreaView style={styles.missing}><Text style={styles.missingTitle}>This idea is not in your Vault.</Text><Text style={styles.missingBody}>It may have been removed or the link may be incomplete.</Text><Pressable accessibilityRole="button" onPress={() => router.replace('/vault')} style={styles.backButton}><Text style={styles.backText}>Back to Vault</Text></Pressable></SafeAreaView>;
-  const accent = idea.accent === 'pink' ? { strong: colors.happy, soft: colors.happySoft } : idea.accent === 'mint' ? { strong: colors.calm, soft: colors.calmSoft } : { strong: colors.primary, soft: colors.primarySoft };
-  const shareIdea = () => void Share.share({ message: `${idea.title}\n\n${report.gist}\n\nNext move: ${report.nextMove}`, title: idea.title });
-  return <SafeAreaView edges={['top']} style={styles.safeArea}><ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}><IdeaDetailHeader accentColor={accent.strong} onShare={shareIdea} onToggleStar={() => setStarred((value) => !value)} starred={starred} title={idea.title} /><IdeaSourceAudio accentColor={accent.strong} surfaceColor={accent.soft} transcript={report.originalWords} /><IdeaReportSections onDiscuss={() => router.push({ pathname: '/discuss/[ideaId]', params: { ideaId: idea.id } })} report={report} /></ScrollView></SafeAreaView>;
+  const insets = useSafeAreaInsets();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id;
+  const [selectedRevision, setSelectedRevision] = useState<number | null>(null);
+  const detail = useIdeaDetail(id, selectedRevision);
+  const playback = useIdeaPlayback(detail.data?.capture.audio ?? null);
+  const [regenerationOpen, setRegenerationOpen] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [sharingPdf, setSharingPdf] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  if (detail.loading) return <IdeaDetailState kind="loading" onBack={() => router.replace('/vault')} />;
+  if (detail.error) return <IdeaDetailState kind="error" onBack={() => router.replace('/vault')} onRetry={detail.refresh} />;
+  if (!detail.data || !id) return <IdeaDetailState kind="missing" onBack={() => router.replace('/vault')} />;
+  const { capture, report, revisions, sources } = detail.data;
+  const activeReport = capture.activeReportRevision === null
+    ? null
+    : revisions.find((revision) => revision.revision === capture.activeReportRevision) ?? null;
+  const regenerate = async (expectedActiveRevision: number | null, explicitlyReplacedUserFields: readonly ReportField[]) => {
+    setRegenerating(true); setNotice(null);
+    try {
+      await regenerateReport(capture, expectedActiveRevision, explicitlyReplacedUserFields);
+      setSelectedRevision(null);
+      setRegenerationOpen(false);
+      setNotice(explicitlyReplacedUserFields.length
+        ? 'A new report revision is queued. Selected edits will be replaced; the rest stay protected.'
+        : 'A new report revision is queued. Your edits will remain protected.');
+      detail.refresh();
+    } catch (error) {
+      const normalized = normalizeError(error, 'report-generation');
+      setNotice(normalized.code === 'conflict'
+        ? 'The report changed before regeneration was queued. Refresh this idea, review the current revision, and try again.'
+        : normalized.message);
+    } finally {
+      setRegenerating(false);
+    }
+  };
+  const openRegeneration = () => {
+    setNotice(null);
+    setRegenerationOpen(true);
+  };
+  const toggleStar = async () => {
+    try {
+      await setCaptureStarred(capture, !capture.starred);
+      detail.refresh();
+    } catch {
+      setNotice('Could not update the star.');
+    }
+  };
+  const share = async () => {
+    try {
+      await shareCaptures([capture.id]);
+    } catch {
+      setNotice('Could not open sharing for this idea.');
+    }
+  };
+  const sharePdf = async () => {
+    if (!report) {
+      setNotice('PDF sharing is available once this idea has a report.');
+      return;
+    }
+    setSharingPdf(true); setNotice(null);
+    try {
+      await shareIdeaPdfExport(capture, report, sources);
+      setNotice('The PDF share sheet is open.');
+    } catch (error) {
+      setNotice(`PDF export failed: ${normalizeError(error, 'export').message}`);
+    } finally {
+      setSharingPdf(false);
+    }
+  };
+
+  return <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <ScrollView contentContainerStyle={[styles.content, { paddingBottom: 42 + insets.bottom }]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+      <IdeaDetailHeader capture={capture} onRegenerate={openRegeneration} onShare={() => void share()} onSharePdf={() => void sharePdf()} onToggleStar={() => void toggleStar()} regenerating={regenerating} report={report} sharingPdf={sharingPdf} />
+      <RegenerationControl
+        expectedActiveRevision={capture.activeReportRevision}
+        onCancel={() => setRegenerationOpen(false)}
+        onConfirm={regenerate}
+        open={regenerationOpen}
+        regenerating={regenerating}
+        report={activeReport}
+      />
+      {notice ? <Text accessibilityLiveRegion="polite" style={styles.notice}>{notice}</Text> : null}
+      <IdeaSourceAudio audio={capture.audio} error={playback.error} onToggle={() => void playback.toggle()} playbackState={playback.state} positionMs={playback.positionMs} durationMs={playback.durationMs} transcript={capture.transcript?.text ?? null} />
+      <IdeaReportSections
+        capture={capture}
+        onDiscuss={() => router.push({ pathname: '/discuss/[ideaId]', params: { ideaId: capture.id } })}
+        onOpenCitation={openCitation}
+        onRegenerate={openRegeneration}
+        onSaveManual={async (content) => {
+          if (!report) return;
+          await saveManualReport(capture.id, report, content, sources);
+          setSelectedRevision(null);
+          detail.refresh();
+        }}
+        onSelectRevision={setSelectedRevision}
+        regenerating={regenerating}
+        report={report}
+        revisions={revisions}
+        sources={sources}
+      />
+    </ScrollView>
+  </SafeAreaView>;
 }
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: colors.canvas }, content: { paddingHorizontal: spacing.page, paddingTop: 14, paddingBottom: 36 }, missing: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing.page, backgroundColor: colors.canvas }, missingTitle: { color: colors.ink, fontFamily: onboardingFonts.displayBold, fontSize: 25, textAlign: 'center' }, missingBody: { maxWidth: 300, marginTop: 8, color: colors.inkMuted, fontFamily: onboardingFonts.bodyRegular, fontSize: 14, lineHeight: 20, textAlign: 'center' }, backButton: { height: 50, justifyContent: 'center', marginTop: 20, paddingHorizontal: 22, borderRadius: radii.pill, backgroundColor: colors.ink }, backText: { color: colors.inkInverse, fontFamily: onboardingFonts.bodyBold, fontSize: 13 },
+  safeArea: { flex: 1, backgroundColor: colors.canvas },
+  content: { flexGrow: 1, paddingHorizontal: spacing.page, paddingTop: 14, paddingBottom: 42 },
+  notice: { marginTop: 14, color: colors.inkSecondary, fontFamily: onboardingFonts.bodySemiBold, fontSize: 12, lineHeight: 18 },
 });

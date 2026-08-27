@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { defaultAiModel, defaultAiProvider, defaultSpeechModel, defaultSpeechProvider, findAiProvider, findSpeechProvider, type AiProvider, type SpeechProvider } from '@/features/onboarding/provider-config';
 import { readProfile, saveProfile } from '@/features/onboarding/storage';
+import { probeSelectedProviders } from '@/features/providers/probes';
 
 export function useProviderSettings() {
   const [name, setName] = useState('You');
@@ -29,7 +30,7 @@ export function useProviderSettings() {
       const ai = findAiProvider(profile.aiProvider);
       setName(profile.name); setSpeechProvider(speech.id); setSpeechModel(profile.speechModel || speech.starterModels[0] || ''); setSpeechKey(profile.speechKey); setSpeechEndpoint(profile.speechEndpoint);
       setAiProvider(ai.id); setAiModel(profile.aiModel || ai.starterModels[0] || ''); setAiKey(profile.aiKey); setAiEndpoint(profile.aiEndpoint);
-    });
+    }).catch(() => setMessage('Could not load provider settings.'));
   }, []);
 
   const save = async () => {
@@ -37,12 +38,16 @@ export function useProviderSettings() {
       setMessage('Add both API keys and select both models before saving.');
       return;
     }
-    setSaving(true); setMessage(null);
+    setSaving(true); setMessage('Checking both provider connections…');
     try {
+      await probeSelectedProviders({
+        speech: { selection: { providerId: speechProvider, model: speechModel.trim(), endpoint: speechEndpoint.trim() || null }, apiKey: speechKey.trim() },
+        ai: { selection: { providerId: aiProvider, model: aiModel.trim(), endpoint: aiEndpoint.trim() || null }, apiKey: aiKey.trim() },
+      });
       await saveProfile({ name, speechProvider, speechModel, speechKey: speechKey.trim(), speechEndpoint: speechEndpoint.trim(), aiProvider, aiModel, aiKey: aiKey.trim(), aiEndpoint: aiEndpoint.trim() });
-      setMessage('Provider settings saved securely.');
+      setMessage('Both provider connections passed and settings were saved securely.');
     } catch {
-      setMessage('Could not save provider settings. Please try again.');
+      setMessage('Could not verify both providers. Check the keys, models, endpoints, and connection, then try again.');
     } finally {
       setSaving(false);
     }
