@@ -292,7 +292,6 @@ async function fetchWithTimeout(options: RequestOptions) {
       response,
       dispose: () => {
         clearTimeout(timeout);
-        controller.abort();
       },
     };
   } catch (reason) {

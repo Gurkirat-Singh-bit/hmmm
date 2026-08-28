@@ -68,7 +68,6 @@ async function requestCatalog(kind: CatalogKind, provider: ProviderDefinition, a
     throw new Error('Could not sync the model catalog. Check the connection and try again.');
   } finally {
     clearTimeout(timeout);
-    controller.abort();
   }
 }
 
