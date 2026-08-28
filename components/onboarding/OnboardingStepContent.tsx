@@ -10,7 +10,6 @@ import { AccessibilityInfo, Animated, Image, StyleSheet, Text, View } from 'reac
 
 import {
   EndpointField,
-  MicrophonePermissionCard,
   NameField,
   ProviderChoices,
   ResearchTransferChoices,
@@ -74,10 +73,7 @@ export function OnboardingStepContent({ flow, compact, onNameFocus, onNameSubmit
         <Text accessibilityRole="header" style={styles.heading}>{copy.heading}</Text>
         <Text style={styles.body}>{copy.body}</Text>
       </View>
-      {step === 0 ? <>
-        <NameField attempted={flow.attempted} onChangeText={flow.setName} onFocus={onNameFocus} onSubmit={onNameSubmit} value={flow.name} />
-        <MicrophonePermissionCard permission={flow.microphonePermission} onRequest={() => void flow.requestMicrophone()} />
-      </> : null}
+      {step === 0 ? <NameField attempted={flow.attempted} onChangeText={flow.setName} onFocus={onNameFocus} onSubmit={onNameSubmit} value={flow.name} /> : null}
       {step === 1 ? <SpeechSetup flow={flow} /> : null}
       {step === 2 ? <AiSetup flow={flow} /> : null}
     </Animated.View>
@@ -112,16 +108,16 @@ function AiSetup({ flow }: { flow: Flow }) {
       <SecretField attempted={flow.attempted} label="LLM API KEY" onChangeText={flow.setAiKey} placeholder="Paste LLM API key" value={flow.aiKey} />
       <SearchableModelPicker error={catalog.error} label="MODEL" loading={catalog.loading} onChange={flow.setAiModel} onRefresh={catalog.canRefresh ? catalog.refresh : undefined} options={catalog.models} value={flow.aiModel} />
     </View>
-    <Text style={styles.transferNote}>Your transcript is sent directly to {provider.label} for reports and discussion. It does not pass through a Hmmmidea account or backend.</Text>
+    <Text style={styles.transferNote}>{provider.label} receives your transcript for reports and chat.</Text>
     <ResearchTransferChoices attempted={flow.attempted} onChange={flow.setResearchConsent} value={flow.researchConsent} />
   </View>;
 }
 
 function getStepCopy(step: Flow['step'], name: string) {
   return [
-    { heading: 'Catch the thought before it goes.', body: 'Ideas and source audio stay on this Android device. Your name is only used for the greeting.' },
+    { heading: 'What should we call you?', body: 'This name is only used for your greeting.' },
     { heading: 'Turn your voice into words.', body: 'Choose the speech setup used after an idea is safely recorded.' },
-    { heading: `Shape ideas, ${name.trim() || 'your way'}.`, body: 'Configure the AI setup, then decide whether provider-native research may look things up.' },
+    { heading: `Shape ideas, ${name.trim() || 'your way'}.`, body: 'Choose an AI model and whether it may search the web.' },
   ][step];
 }
 

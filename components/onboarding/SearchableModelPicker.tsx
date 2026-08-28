@@ -10,7 +10,6 @@ import {
   CaretDownIcon as CaretDown,
   CheckIcon as Check,
   MagnifyingGlassIcon as MagnifyingGlass,
-  WarningCircleIcon as WarningCircle,
   XIcon as X,
 } from 'phosphor-react-native';
 import { useMemo, useState } from 'react';
@@ -60,14 +59,10 @@ export function SearchableModelPicker({ error, label, light = false, loading, op
         <Pressable accessibilityHint="Opens a searchable list of provider model IDs." accessibilityLabel={`${label}: ${value || 'no model selected'}`} accessibilityRole="button" accessibilityState={{ expanded: open }} onPress={() => setOpen(true)} style={({ pressed }) => [styles.trigger, light && styles.triggerLight, pressed && styles.pressed]}>
           <View style={styles.triggerCopy}>
             <Text style={[styles.value, light && styles.lightText, !value && styles.placeholder]}>{value || 'Choose a model'}</Text>
-            <Text style={[styles.hint, light && styles.lightMutedText]}>{loading ? 'Loading current models…' : `${options.length} models available · Tap to search`}</Text>
+            <Text numberOfLines={2} style={[styles.hint, light && styles.lightMutedText, error && styles.errorHint]}>{error ?? (loading ? 'Loading current models…' : `${options.length} models available · Tap to search`)}</Text>
           </View>
           <CaretDown color={colors.darkMuted} size={18} weight="bold" />
         </Pressable>
-        {error ? <View accessibilityRole="alert" style={styles.errorMessage}>
-          <WarningCircle color={colors.danger} size={16} weight="fill" />
-          <Text style={styles.errorText}>{error}</Text>
-        </View> : null}
       </View>
 
       <Modal animationType="slide" onRequestClose={() => setOpen(false)} visible={open}>
@@ -112,8 +107,7 @@ const styles = StyleSheet.create({
   syncText: { color: colors.darkMuted, fontFamily: onboardingFonts.bodyBold, fontSize: 8, letterSpacing: 0.6 },
   trigger: { minHeight: 58, flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.darkLine, borderRadius: radii.medium, backgroundColor: colors.darkCanvas },
   triggerCopy: { flex: 1, gap: 3 }, value: { color: colors.inkInverse, fontFamily: onboardingFonts.bodySemiBold, fontSize: 14 }, placeholder: { color: colors.darkMuted }, hint: { color: colors.darkMuted, fontFamily: onboardingFonts.bodyRegular, fontSize: 10 }, pressed: { opacity: 0.7 },
-  errorMessage: { flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingHorizontal: 12, paddingVertical: 10, borderRadius: radii.small, backgroundColor: colors.dangerSoft },
-  errorText: { flex: 1, color: colors.ink, fontFamily: onboardingFonts.bodyMedium, fontSize: 10, lineHeight: 15 },
+  errorHint: { color: colors.danger },
   modal: { flex: 1, backgroundColor: colors.canvas }, header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.page, paddingTop: 12, paddingBottom: 18 },
   modalKicker: { color: colors.inkMuted, fontFamily: onboardingFonts.bodyBold, fontSize: 9, letterSpacing: 1.2 }, modalTitle: { marginTop: 5, color: colors.ink, fontFamily: onboardingFonts.displayBold, fontSize: 25 },
   close: { width: 48, height: 48, alignItems: 'center', justifyContent: 'center', borderRadius: 24, backgroundColor: colors.surfaceMuted },

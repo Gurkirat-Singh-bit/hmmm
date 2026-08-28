@@ -28,9 +28,8 @@ export function VoiceCapturePanel({ capture, onCancel, onFinish, onPause, onResu
   return (
     <View style={styles.panel}>
       <View style={[styles.liveArea, capture.phase === 'failure' && styles.failureArea]}>
-        <Text accessibilityLiveRegion="polite" accessibilityRole="header" style={styles.stateLabel}>{stateLabel(capture.phase)}</Text>
         <Text style={styles.timer}>{time}</Text>
-        <Text accessibilityLiveRegion={capture.phase === 'failure' ? 'assertive' : capture.message ? 'polite' : 'none'} style={styles.transcriptText}>{captureCopy(capture)}</Text>
+        <Text accessibilityLiveRegion={capture.phase === 'failure' ? 'assertive' : capture.message ? 'polite' : 'none'} numberOfLines={4} style={styles.transcriptText}>{captureCopy(capture)}</Text>
       </View>
       <View style={styles.controls}>
         <CaptureControl disabled={!active || busy} icon={Trash} label="Discard" onPress={onCancel} />
@@ -59,13 +58,6 @@ function primaryAction(capture: CapturePresentation) {
   return { icon: Microphone, label: capture.phase === 'permission' ? 'Allow mic' : 'Record', kind: 'start' as const };
 }
 
-function stateLabel(phase: CapturePresentation['phase']) {
-  return {
-    idle: 'Ready when you are', permission: 'Microphone access', starting: 'Starting securely', recording: 'Listening',
-    paused: 'Paused', saving: 'Saving safely', queued: 'Saved', failure: 'Capture needs attention',
-  }[phase];
-}
-
 function captureCopy(capture: CapturePresentation) {
   if (capture.message) return capture.message;
   if (capture.transcript) return capture.transcript;
@@ -91,8 +83,8 @@ function CaptureControl({ disabled = false, icon: Icon, label, onPress }: { disa
 }
 
 const styles = StyleSheet.create({
-  panel: { marginTop: 16, overflow: 'hidden', borderRadius: radii.panel, backgroundColor: colors.canvas, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.line },
-  liveArea: { minHeight: 202, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 26, paddingVertical: 20, borderRadius: radii.large, backgroundColor: colors.primary },
-  failureArea: { backgroundColor: colors.happySoft }, stateLabel: { color: colors.ink, fontFamily: onboardingFonts.bodySemiBold, fontSize: 12 }, timer: { marginTop: 4, color: colors.ink, fontFamily: onboardingFonts.displayBold, fontSize: 42, letterSpacing: -1.5 }, transcriptText: { maxWidth: 290, marginTop: 8, color: colors.ink, fontFamily: onboardingFonts.bodyMedium, fontSize: 15, lineHeight: 21, textAlign: 'center' },
-  controls: { minHeight: 78, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4 }, control: { minHeight: 64, flex: 1, alignItems: 'center', justifyContent: 'center', gap: 4 }, controlIcon: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center', borderRadius: 20, backgroundColor: colors.surfaceMuted }, controlLabel: { color: colors.inkMuted, fontFamily: onboardingFonts.bodySemiBold, fontSize: 11 }, divider: { width: StyleSheet.hairlineWidth, height: 40, backgroundColor: colors.line }, disabled: { opacity: 0.3 }, pressed: { opacity: 0.65 },
+  panel: { marginTop: 16, padding: 7, paddingBottom: 0, overflow: 'hidden', borderRadius: radii.panel, backgroundColor: colors.canvas, shadowColor: '#000', shadowOffset: { width: 0, height: 7 }, shadowOpacity: 0.09, shadowRadius: 18, elevation: 5 },
+  liveArea: { height: 196, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 17, borderRadius: 25, backgroundColor: colors.primary },
+  failureArea: { backgroundColor: colors.happySoft }, timer: { color: colors.ink, fontFamily: onboardingFonts.displayBold, fontSize: 42, letterSpacing: -1.5 }, transcriptText: { maxWidth: 280, marginTop: 5, color: colors.ink, fontFamily: onboardingFonts.displaySemiBold, fontSize: 16, lineHeight: 20, textAlign: 'center' },
+  controls: { height: 76, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4 }, control: { minHeight: 64, flex: 1, alignItems: 'center', justifyContent: 'center', gap: 5 }, controlIcon: { width: 34, height: 34, alignItems: 'center', justifyContent: 'center', borderRadius: 17, backgroundColor: colors.surfaceMuted }, controlLabel: { color: colors.inkMuted, fontFamily: onboardingFonts.bodySemiBold, fontSize: 10 }, divider: { width: StyleSheet.hairlineWidth, height: 38, backgroundColor: colors.line }, disabled: { opacity: 0.28 }, pressed: { opacity: 0.65 },
 });

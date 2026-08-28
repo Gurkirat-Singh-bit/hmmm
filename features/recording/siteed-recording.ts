@@ -1,4 +1,5 @@
 import { AppState, Platform, type AppStateStatus } from 'react-native';
+import { requireOptionalNativeModule } from 'expo-modules-core';
 
 import type {
   AudioAsset,
@@ -80,6 +81,9 @@ function requireAndroid(): void {
 
 async function loadSiteed(): Promise<SiteedModule> {
   requireAndroid();
+  if (!requireOptionalNativeModule('AudioStudio')) {
+    throw domainError('unsupported', 'recording', 'Recording requires the installed Android development build, not Expo Go.');
+  }
   try {
     const library = await import('@siteed/audio-studio');
     return library.AudioStudioModule as SiteedModule;

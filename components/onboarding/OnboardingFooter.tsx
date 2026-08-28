@@ -29,7 +29,7 @@ export function OnboardingFooter({ step, complete, saving, onBack, onContinue }:
       <Pressable accessibilityHint={complete ? 'Continues setup.' : 'Completes the required information for this step.'} accessibilityLabel={saving ? 'Saving setup' : finalStep ? 'Verify providers and start capturing' : 'Continue setup'} accessibilityRole="button" accessibilityState={{ busy: saving, disabled: saving }} disabled={saving} onPress={onContinue} style={({ pressed }) => [styles.next, pressed && styles.pressed, saving && styles.disabled]}>
         <View style={styles.copy}>
           <Text style={styles.label}>{saving ? 'Verifying providers' : finalStep ? 'Start capturing' : 'Continue'}</Text>
-          <Text style={styles.hint}>{saving ? 'Checking speech and AI connections' : complete ? finalStep ? 'Consent and setup are ready' : 'Go to the next step' : 'Complete this step first'}</Text>
+          <Text numberOfLines={1} style={styles.hint}>{saving ? 'Checking speech and AI connections' : complete ? finalStep ? 'Consent and setup are ready' : 'Go to the next step' : 'Complete this step first'}</Text>
         </View>
         {saving ? <ActivityIndicator color={colors.ink} size="small" /> : finalStep ? <Check color={colors.ink} size={20} weight="bold" /> : <ArrowRight color={colors.ink} size={20} weight="bold" />}
       </Pressable>

@@ -1,9 +1,10 @@
 /** State and secure completion flow for the three-step Android onboarding. */
 
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 
-import type { RecordingPermission, ResearchConsent } from '@/features/domain/contracts';
+import type { ResearchConsent } from '@/features/domain/contracts';
+import { normalizeError } from '@/features/domain/errors';
 import {
   defaultAiModel,
   defaultAiProvider,
@@ -16,7 +17,7 @@ import {
 } from '@/features/onboarding/provider-config';
 import { readProfile, saveProfile } from '@/features/onboarding/storage';
 import { probeSelectedProviders } from '@/features/providers/probes';
-import { SiteedRecordingAdapter } from '@/features/recording/siteed-recording';
+import { refreshAppRuntime } from '@/features/runtime/app-runtime';
 
 export const onboardingStepCount = 3;
 export type OnboardingStep = 0 | 1 | 2;
@@ -25,10 +26,8 @@ type ResearchDecision = Exclude<ResearchConsent['status'], 'unknown'> | 'unknown
 
 export function useOnboardingFlow() {
   const router = useRouter();
-  const recorder = useMemo(() => new SiteedRecordingAdapter(), []);
   const [step, setStep] = useState<OnboardingStep>(0);
   const [name, setName] = useState('');
-  const [microphonePermission, setMicrophonePermission] = useState<RecordingPermission>('undetermined');
   const [speechProvider, setSpeechProvider] = useState<SpeechProvider>(defaultSpeechProvider);
   const [speechModel, setSpeechModel] = useState<string>(defaultSpeechModel);
   const [speechKey, setSpeechKey] = useState('');
@@ -43,8 +42,7 @@ export function useOnboardingFlow() {
   const [notice, setNotice] = useState<OnboardingNotice>(null);
 
   useEffect(() => {
-    void Promise.all([readProfile(), recorder.getPermission().catch(() => 'undetermined' as const)]).then(([profile, permission]) => {
-      setMicrophonePermission(permission);
+    void readProfile().then((profile) => {
       if (!profile) return;
       setName(profile.name);
       const savedSpeechProvider = findSpeechProvider(profile.speechProvider as SpeechProvider).id;
@@ -57,11 +55,11 @@ export function useOnboardingFlow() {
       setAiModel(profile.aiModel || findAiProvider(savedAiProvider).starterModels[0] || '');
       setAiKey(profile.aiKey);
       setAiEndpoint(profile.aiEndpoint);
-    }).catch(() => setNotice({ title: 'Setup needs Android storage', body: 'Open Hmmmidea in an Android development build, then try again.' }));
-  }, [recorder]);
+    }).catch(() => setNotice({ title: 'Couldn\u2019t load setup', body: 'Check device storage, then try again.' }));
+  }, []);
 
   const stepComplete =
-    step === 0 ? Boolean(name.trim() && microphonePermission === 'granted') :
+    step === 0 ? Boolean(name.trim()) :
       step === 1 ? Boolean(speechKey.trim() && speechModel.trim() && (speechProvider !== 'custom' || speechEndpoint.trim())) :
         Boolean(aiKey.trim() && aiModel.trim() && (aiProvider !== 'custom' || aiEndpoint.trim()) && researchConsent !== 'unknown');
 
@@ -70,27 +68,8 @@ export function useOnboardingFlow() {
     setStep(nextStep);
   };
 
-  const requestMicrophone = async () => {
-    try {
-      const current = await recorder.getPermission();
-      const permission = current === 'granted' ? current : await recorder.requestPermission();
-      setMicrophonePermission(permission);
-      if (permission !== 'granted') {
-        setNotice({ title: 'Microphone access is needed', body: 'Allow microphone access in Android settings so Hmmmidea can capture an idea.' });
-      }
-      return permission === 'granted';
-    } catch {
-      setNotice({ title: 'Microphone unavailable', body: 'Hmmmidea needs an Android development build with recording support before you can continue.' });
-      return false;
-    }
-  };
-
-  const next = async () => {
-    const microphoneGranted = step === 0 && microphonePermission !== 'granted'
-      ? await requestMicrophone()
-      : microphonePermission === 'granted';
-    const complete = step === 0 ? Boolean(name.trim() && microphoneGranted) : stepComplete;
-    if (!complete) {
+  const next = () => {
+    if (!stepComplete) {
       setAttempted(true);
       return false;
     }
@@ -121,16 +100,23 @@ export function useOnboardingFlow() {
         researchEnabled: true,
         researchConsent: researchConsent as Exclude<ResearchConsent['status'], 'unknown'>,
       });
+      await refreshAppRuntime();
       router.replace('/');
-    } catch {
-      setNotice({ title: 'Check both provider connections', body: 'Hmmmidea could not verify the selected speech and AI setups. Check each key, model, endpoint, and connection, then try again.' });
+    } catch (error) {
+      const detail = normalizeError(error, 'provider-configuration');
+      const provider = detail.providerId === speechProvider
+        ? findSpeechProvider(speechProvider).label
+        : detail.providerId === aiProvider
+          ? findAiProvider(aiProvider).label
+          : 'Provider';
+      setNotice({ title: `${provider} check failed`, body: detail.message });
     } finally {
       setSaving(false);
     }
   };
 
   return {
-    step, name, setName, microphonePermission, requestMicrophone,
+    step, name, setName,
     speechProvider, setSpeechProvider, speechModel, setSpeechModel, speechKey, setSpeechKey, speechEndpoint, setSpeechEndpoint,
     aiProvider, setAiProvider, aiModel, setAiModel, aiKey, setAiKey, aiEndpoint, setAiEndpoint,
     researchConsent, setResearchConsent,

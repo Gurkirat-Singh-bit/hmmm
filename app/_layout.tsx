@@ -8,7 +8,6 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Stack, usePathname, useRootNavigationState, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { ReduceMotion, ReducedMotionConfig } from 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useEffect, useRef } from 'react';
 
@@ -21,7 +20,6 @@ import { refreshAppRuntime, retryAppRuntime, useAppRuntime, type AppRuntimeSnaps
 export default function RootLayout() {
   const runtime = useAppRuntime();
   return <SafeAreaProvider>
-    <ReducedMotionConfig mode={ReduceMotion.System} />
     {runtime.status === 'ready' ? <RootNavigator runtime={runtime} /> : <RuntimeBootstrap error={runtime.error} loading={runtime.status !== 'error'} />}
   </SafeAreaProvider>;
 }

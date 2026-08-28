@@ -20,8 +20,8 @@ export default function OnboardingScreen() {
   const { height } = useWindowDimensions();
   const scrollRef = useRef<ScrollView>(null);
 
-  const moveForward = async () => {
-    if (await flow.next()) {
+  const moveForward = () => {
+    if (flow.next()) {
       scrollRef.current?.scrollTo({ animated: true, y: 0 });
     } else {
       scrollRef.current?.scrollToEnd({ animated: true });
@@ -44,10 +44,10 @@ export default function OnboardingScreen() {
         </View>
 
         <ScrollView automaticallyAdjustKeyboardInsets contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" ref={scrollRef} showsVerticalScrollIndicator={false} style={styles.scroller}>
-          <OnboardingStepContent compact={height < 740} flow={flow} onNameFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)} onNameSubmit={() => void moveForward()} />
+          <OnboardingStepContent compact={height < 740} flow={flow} onNameFocus={() => setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 180)} onNameSubmit={moveForward} />
         </ScrollView>
 
-        <OnboardingFooter complete={flow.stepComplete} onBack={moveBack} onContinue={flow.step === onboardingStepCount - 1 ? () => void flow.finish() : () => void moveForward()} saving={flow.saving} step={flow.step} />
+        <OnboardingFooter complete={flow.stepComplete} onBack={moveBack} onContinue={flow.step === onboardingStepCount - 1 ? () => void flow.finish() : moveForward} saving={flow.saving} step={flow.step} />
       </KeyboardAvoidingView>
       <OnboardingNotice notice={flow.notice} onClose={() => flow.setNotice(null)} />
     </SafeAreaView>

@@ -80,6 +80,28 @@ export async function probeAiProvider(context: ProviderContext): Promise<Provide
   const { apiKey, model } = requireProviderContext(context, providerId);
   const base = providerBaseUrl(context, providerId);
   const requestId = `probe-ai-${startedAt}`;
+  if (providerId === 'openrouter') {
+    await requestProbe({
+      providerId,
+      operation: 'provider-configuration',
+      url: `${base}/key`,
+      init: { headers: requestHeaders(providerId, apiKey, requestId) },
+      timeoutMs: PROVIDER_TIMEOUT_MS.probe,
+      attempts: 1,
+    });
+    const payload = await requestJson({
+      providerId,
+      operation: 'provider-configuration',
+      url: `${base}/models`,
+      init: { headers: requestHeaders(providerId, apiKey, requestId) },
+      timeoutMs: PROVIDER_TIMEOUT_MS.probe,
+      attempts: 1,
+    });
+    if (!isOpenRouterRoute(model) && !catalogContainsModel(payload, providerId, model)) {
+      throw providerError('unsupported', 'provider-configuration', providerId, 'OpenRouter does not list the selected model. Choose it again from the catalog.');
+    }
+    return probeResult('ai', providerId, model, startedAt);
+  }
   const url = providerId === 'openai'
     ? `${base}/responses`
     : providerId === 'google'
@@ -123,7 +145,7 @@ function probeAiBody(providerId: AiProviderId, model: string) {
   return { model, max_tokens: 1, messages: [{ role: 'user', content: 'Reply OK.' }] };
 }
 
-function catalogContainsModel(payload: unknown, providerId: SpeechProviderId, model: string) {
+function catalogContainsModel(payload: unknown, providerId: string, model: string) {
   if (!isRecord(payload)) return false;
   const values = providerId === 'deepgram' ? payload.stt : payload.data;
   if (!Array.isArray(values)) return false;
@@ -132,6 +154,10 @@ function catalogContainsModel(payload: unknown, providerId: SpeechProviderId, mo
     const id = providerId === 'deepgram' ? value.canonical_name : value.id;
     return id === model;
   });
+}
+
+function isOpenRouterRoute(model: string) {
+  return model === 'openrouter/auto' || model === 'openrouter/free';
 }
 
 function probeResult(kind: 'speech' | 'ai', providerId: string, model: string, startedAt: number) {
