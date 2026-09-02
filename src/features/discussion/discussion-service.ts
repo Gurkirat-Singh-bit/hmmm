@@ -39,7 +39,7 @@ const MESSAGE_PAGE_SIZE = 500;
 const REQUEST_CONTEXT_MESSAGES = 20;
 const STREAM_WRITE_CHARACTERS = 48;
 
-export type DiscussionAvailability = "ready" | "offline" | "missing-provider";
+export type DiscussionAvailability = "ready" | "missing-provider";
 
 export type DiscussionThreadData = Readonly<{
   capture: CaptureRecord;
@@ -200,13 +200,6 @@ class DiscussionService {
     try {
       const preferences = await readPreferences();
       const availability = discussionAvailability(preferences);
-      if (availability === "offline")
-        throw domainError(
-          "offline",
-          "discussion",
-          "You are offline. Your draft is saved locally.",
-          true,
-        );
       if (availability !== "ready") {
         throw domainError(
           "configuration-missing",
@@ -257,13 +250,6 @@ class DiscussionService {
     try {
       const preferences = await readPreferences();
       const availability = discussionAvailability(preferences);
-      if (availability === "offline")
-        throw domainError(
-          "offline",
-          "discussion",
-          "You are offline. Reconnect before retrying.",
-          true,
-        );
       if (availability !== "ready") {
         throw domainError(
           "configuration-missing",
@@ -772,18 +758,11 @@ function deletedCaptureError() {
 function discussionAvailability(
   preferences: AppPreferencesRecord,
 ): DiscussionAvailability {
-  if (!isNetworkAvailable()) return "offline";
   const provider = providerRegistry.getAi(preferences.aiProvider.providerId);
   return provider?.descriptor.capabilities["ai.discussion"] &&
     preferences.aiProvider.model.trim()
     ? "ready"
     : "missing-provider";
-}
-function isNetworkAvailable() {
-  const environment = globalThis as typeof globalThis & {
-    navigator?: { onLine?: boolean };
-  };
-  return environment.navigator?.onLine !== false;
 }
 function cancellationError(message: string): NormalizedError {
   return domainError("cancelled", "discussion", message, true).detail;

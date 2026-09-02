@@ -48,11 +48,8 @@ export function DiscussionComposer({
 
   return (
     <View style={styles.shell}>
-      {availability === "offline" ? (
-        <AvailabilityNotice text="Offline. Read saved messages and keep drafting, then send when you reconnect." />
-      ) : null}
       {availability === "missing-provider" ? (
-        <AvailabilityNotice text="Add an AI provider to send this saved draft." />
+        <AvailabilityNotice text="Add or repair your AI provider in Settings to send this saved draft." />
       ) : null}
       <View style={[styles.composer, unavailable && styles.composerDisabled]}>
         <TextInput
