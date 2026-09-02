@@ -51,12 +51,6 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    },
-    "extra": {
-      "eas": {
-        "projectId": "71ae011c-9f06-4b02-b5a3-ab2ff42ee4db"
-      }
-    },
-    "owner": "gurkirat-singh-bit"
+    }
   }
 }
