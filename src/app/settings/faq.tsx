@@ -45,7 +45,7 @@ const questions = [
   {
     question: "What can research send to my provider?",
     answer:
-      "Only after you allow it, Hmmmidea can send a query derived from your transcript and relevant transcript context to your chosen AI provider’s own grounding or search tools. You can withdraw that consent in Settings.",
+      "Only after you allow it, AI-native research can send relevant transcript context to your AI provider’s search tools. With SerpApi, one derived query goes to SerpApi and up to six selected snippets and links then go to your AI provider. Standard SerpApi searches may be retained for 31 days, and ZeroTrace is Enterprise-only.",
   },
   {
     question: "Can I remove ideas without losing my setup?",

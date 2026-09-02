@@ -154,6 +154,7 @@ export const defaultPreferences: AppPreferencesRecord = {
   onboardingComplete: false,
   researchEnabled: false,
   researchConsent: { status: "unknown", policyVersion: null, decidedAt: null },
+  researchSource: { kind: "ai-native" },
   notifications: { enabled: false, reportReady: true, processingFailed: true },
   speechProvider: { providerId: "", model: "", endpoint: null },
   aiProvider: { providerId: "", model: "", endpoint: null },
@@ -163,9 +164,14 @@ export const defaultPreferences: AppPreferencesRecord = {
 export function supportedPreferences(
   preferences: AppPreferencesRecord,
 ): AppPreferencesRecord {
-  return preferences.languageTag === "en"
-    ? preferences
-    : { ...preferences, languageTag: "en" };
+  const source = (preferences as Partial<AppPreferencesRecord>).researchSource;
+  const researchSource =
+    source?.kind === "external" &&
+    source.providerId === "serpapi" &&
+    source.engine === "google"
+      ? source
+      : ({ kind: "ai-native" } as const);
+  return { ...preferences, languageTag: "en", researchSource };
 }
 export function json(value: unknown) {
   return JSON.stringify(value);
@@ -340,12 +346,18 @@ export function requireHttps(source: Pick<SourceRecord, "url" | "domain">) {
   }
   const hostname = parsed.hostname.toLowerCase().replace(/^www\./, "");
   const domain = source.domain.toLowerCase().replace(/^www\./, "");
+  const hasCredentialParameter = [...parsed.searchParams.keys()].some((key) =>
+    /(?:^|[-_])(api[-_]?key|key|token|auth(?:orization)?|bearer|secret|password|credential|signature|sig|subscription[-_]?key)(?:$|[-_])/i.test(
+      key,
+    ),
+  );
   if (
     parsed.protocol !== "https:" ||
     parsed.username ||
     parsed.password ||
     !hostname ||
-    hostname !== domain
+    hostname !== domain ||
+    hasCredentialParameter
   ) {
     throw domainError(
       "invalid-url",

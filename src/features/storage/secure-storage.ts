@@ -19,6 +19,7 @@ import { domainError } from "@/features/domain/errors";
 const ACTIVE_CREDENTIAL_KEYS: Readonly<Record<CredentialKind, string>> = {
   speech: "hmmm.credentials.speech",
   ai: "hmmm.credentials.ai",
+  search: "hmmm.credentials.search",
 };
 
 type StoredCredential = Readonly<{

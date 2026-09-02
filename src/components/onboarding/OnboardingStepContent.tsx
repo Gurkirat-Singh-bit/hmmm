@@ -32,6 +32,7 @@ import {
 } from "@/features/onboarding/provider-config";
 import { useModelCatalog } from "@/features/onboarding/use-model-catalog";
 import { useOnboardingFlow } from "@/features/onboarding/use-onboarding-flow";
+import { supportsProviderResearch } from "@/features/provider/config";
 
 type Flow = ReturnType<typeof useOnboardingFlow>;
 
@@ -237,7 +238,16 @@ function AiSetup({ flow }: { flow: Flow }) {
       </Text>
       <ResearchTransferChoices
         attempted={flow.attempted}
+        nativeSupported={supportsProviderResearch(
+          flow.aiProvider,
+          flow.aiModel,
+        )}
         onChange={flow.setResearchConsent}
+        onSearchKeyChange={flow.setSearchKey}
+        onSourceChange={flow.setResearchSource}
+        providerLabel={provider.label}
+        searchKey={flow.searchKey}
+        source={flow.researchSource}
         value={flow.researchConsent}
       />
     </View>

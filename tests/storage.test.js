@@ -278,11 +278,34 @@ describe("SQLite repositories", () => {
         endpoint: null,
       },
       aiProvider: { providerId: "openai", model: "gpt-5-mini", endpoint: null },
+      researchSource: {
+        kind: "external",
+        providerId: "serpapi",
+        engine: "google",
+      },
       apiKey: "must-not-export",
       updatedAt: now,
     });
     const bundle = await repositories.exports.readNonSecretBundle(now);
     expect(JSON.stringify(bundle)).not.toContain("must-not-export");
     expect(bundle.preferences.speechProvider.providerId).toBe("openai");
+    expect(bundle.preferences.researchSource).toEqual({
+      kind: "external",
+      providerId: "serpapi",
+      engine: "google",
+    });
+  });
+
+  test("backfills legacy preferences to AI-native research", async () => {
+    const preferences = await repositories.preferences.get();
+    const { researchSource: _researchSource, ...legacy } = preferences;
+    database
+      .query(
+        "INSERT INTO preferences (id, value_json, updated_at) VALUES ('app', ?, ?)",
+      )
+      .run(JSON.stringify(legacy), now);
+    expect((await repositories.preferences.get()).researchSource).toEqual({
+      kind: "ai-native",
+    });
   });
 });

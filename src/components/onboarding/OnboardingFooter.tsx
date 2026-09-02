@@ -88,7 +88,7 @@ export function OnboardingFooter({
           </Text>
           <Text numberOfLines={1} style={styles.hint}>
             {saving
-              ? "Checking speech and AI connections"
+              ? "Checking configured connections"
               : complete
                 ? finalStep
                   ? "Consent and setup are ready"

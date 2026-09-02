@@ -27,8 +27,14 @@ const {
   normalizeReportSystemPrompt,
   reportSystemPrompt,
 } = await import("../src/features/provider/llm/prompts");
-const { normalizeCitations, parseGeneratedReport, safeSourceUrl } =
-  await import("../src/features/provider/parsing");
+const {
+  normalizeCitations,
+  parseGeneratedReport,
+  parseResearchQuery,
+  safeSourceUrl,
+} = await import("../src/features/provider/parsing");
+const { parseSerpApiResults, requireActiveSerpApiAccount } =
+  await import("../src/features/provider/search/serpapi");
 const { normalizeCustomEndpoint, providerBaseUrl, providerHeaders } =
   await import("../src/features/provider/transport");
 describe("provider protocols", () => {
@@ -170,6 +176,97 @@ describe("provider protocols", () => {
 });
 
 describe("bounded response parsing", () => {
+  test("accepts only an active SerpApi account status", () => {
+    expect(
+      requireActiveSerpApiAccount({
+        account_status: "Active",
+        api_key: "ignored-secret",
+        plan_name: "ignored",
+      }),
+    ).toBeUndefined();
+    expect(() =>
+      requireActiveSerpApiAccount({ account_status: "Disabled" }),
+    ).toThrow("not active");
+    expect(() => requireActiveSerpApiAccount({})).toThrow("could not verify");
+  });
+
+  test("accepts one bounded research query and rejects malformed plans", () => {
+    expect(
+      parseResearchQuery(
+        '{"query":"  offline voice notes market  "}',
+        "openai",
+      ),
+    ).toBe("offline voice notes market");
+    expect(() => parseResearchQuery("not json", "openai")).toThrow();
+    expect(() =>
+      parseResearchQuery(
+        '```json\n{"query":"valid research query"}\n```',
+        "openai",
+      ),
+    ).toThrow();
+    expect(() => parseResearchQuery('{"query":"short"}', "openai")).toThrow();
+    expect(() =>
+      parseResearchQuery(JSON.stringify({ query: "x".repeat(241) }), "openai"),
+    ).toThrow();
+    expect(() =>
+      parseResearchQuery('{"query":"valid query\\nsecond line"}', "openai"),
+    ).toThrow();
+  });
+
+  test("normalizes at most six SerpApi organic results and deduplicates URLs", () => {
+    const organic_results = Array.from({ length: 7 }, (_, index) => ({
+      title: `Result ${index + 1}`,
+      link:
+        index === 1
+          ? "https://example.com/result-0"
+          : `https://example.com/result-${index}`,
+      snippet: `Finding ${index + 1}`,
+      date: "2026-01-01",
+    }));
+    const result = parseSerpApiResults({
+      search_metadata: { status: "Success" },
+      organic_results,
+    });
+    expect(result.findings).toHaveLength(6);
+    expect(result.sources).toHaveLength(5);
+    expect(
+      result.sources.every((source) => source.url.startsWith("https://")),
+    ).toBe(true);
+  });
+
+  test("skips incomplete SerpApi entries and rejects unsafe or empty output", () => {
+    const metadata = { search_metadata: { status: "Success" } };
+    const valid = {
+      title: "Example",
+      link: "https://example.com/research",
+      snippet: "Useful evidence",
+    };
+    expect(
+      parseSerpApiResults({
+        ...metadata,
+        organic_results: [{ ...valid, snippet: undefined }, valid],
+      }).sources,
+    ).toHaveLength(1);
+    expect(() =>
+      parseSerpApiResults({
+        ...metadata,
+        organic_results: [{ ...valid, link: "http://example.com/research" }],
+      }),
+    ).toThrow();
+    expect(() =>
+      parseSerpApiResults({ ...metadata, organic_results: [] }),
+    ).toThrow("no usable organic results");
+    expect(() => parseSerpApiResults({ error: "secret details" })).toThrow(
+      "could not complete this search",
+    );
+    expect(() =>
+      parseSerpApiResults({
+        ...metadata,
+        organic_results: Array.from({ length: 101 }, () => valid),
+      }),
+    ).toThrow("invalid research response");
+  });
+
   test("normalizes only credential-free HTTPS citations", () => {
     const result = normalizeCitations(
       [{ url: "https://example.com/path", title: "Example", text: "Finding" }],
@@ -178,6 +275,7 @@ describe("bounded response parsing", () => {
     expect(result.sources).toHaveLength(1);
     expect(result.findings[0].sourceIds).toEqual([result.sources[0].id]);
     expect(safeSourceUrl("https://user@example.com/path")).toBeNull();
+    expect(safeSourceUrl("https://example.com/path?api_key=secret")).toBeNull();
     expect(() =>
       normalizeCitations(
         [{ url: "https://user@example.com/path", title: "Bad", text: "Bad" }],

@@ -10,7 +10,9 @@ import type {
   AppPreferencesRecord,
   NotificationPreferences,
   ResearchConsent,
+  ResearchSource,
 } from "@/features/domain/contracts";
+import { domainError } from "@/features/domain/errors";
 import {
   createCredentialVersion,
   providerCredentials,
@@ -31,6 +33,8 @@ export type OnboardingProfile = Readonly<{
   aiModel: string;
   aiKey: string;
   aiEndpoint: string;
+  researchSource?: ResearchSource;
+  searchKey?: string;
 }>;
 export type SetupSaveOptions = Readonly<{
   onboardingComplete?: boolean;
@@ -38,7 +42,7 @@ export type SetupSaveOptions = Readonly<{
   researchConsent?: Exclude<ResearchConsent["status"], "unknown">;
 }>;
 
-const RESEARCH_CONSENT_VERSION = "research-transfer-v1";
+const RESEARCH_CONSENT_VERSION = "research-transfer-v2";
 let databasePromise: Promise<AppDatabase> | null = null;
 let setupWriteTail: Promise<void> = Promise.resolve();
 
@@ -90,20 +94,52 @@ export async function saveResearchPreferences(
   input: Readonly<{
     enabled: boolean;
     consent: Exclude<ResearchConsent["status"], "unknown">;
+    source?: ResearchSource;
+    searchKey?: string;
   }>,
 ): Promise<void> {
-  const app = await database();
-  const current = await app.repositories.preferences.get();
-  const now = new Date().toISOString();
-  await app.repositories.preferences.save({
-    ...current,
-    researchEnabled: input.enabled,
-    researchConsent: {
-      status: input.consent,
-      policyVersion: RESEARCH_CONSENT_VERSION,
-      decidedAt: now,
-    },
-    updatedAt: now,
+  return queueSetupWrite(async () => {
+    const app = await database();
+    const current = await app.repositories.preferences.get();
+    const now = new Date().toISOString();
+    const source = input.source ?? current.researchSource;
+    const searchKey = input.searchKey?.trim();
+    if (
+      source.kind === "external" &&
+      input.enabled &&
+      !searchKey &&
+      !(await providerCredentials.readActive("search"))?.secret.trim()
+    ) {
+      throw domainError(
+        "configuration-missing",
+        "provider-configuration",
+        "Add a SerpApi key before enabling external research.",
+      );
+    }
+    await commitCredentialChange(
+      providerCredentials,
+      searchKey
+        ? {
+            search: {
+              kind: "search",
+              version: createCredentialVersion(),
+              secret: searchKey,
+            },
+          }
+        : {},
+      () =>
+        app.repositories.preferences.save({
+          ...current,
+          researchEnabled: input.enabled,
+          researchConsent: {
+            status: input.consent,
+            policyVersion: RESEARCH_CONSENT_VERSION,
+            decidedAt: now,
+          },
+          researchSource: source,
+          updatedAt: now,
+        }),
+    );
   });
 }
 
@@ -145,9 +181,10 @@ export async function isOnboardingComplete(): Promise<boolean> {
 /** Builds the editable setup profile with credentials held only in memory. */
 export async function readProfile(): Promise<OnboardingProfile | null> {
   const preferences = await readPreferences();
-  const [speech, ai] = await Promise.all([
+  const [speech, ai, search] = await Promise.all([
     providerCredentials.readActive("speech"),
     providerCredentials.readActive("ai"),
+    providerCredentials.readActive("search"),
   ]);
   if (
     !preferences.displayName &&
@@ -166,6 +203,8 @@ export async function readProfile(): Promise<OnboardingProfile | null> {
     aiModel: preferences.aiProvider.model,
     aiKey: ai?.secret ?? "",
     aiEndpoint: preferences.aiProvider.endpoint ?? "",
+    researchSource: preferences.researchSource,
+    searchKey: search?.secret ?? "",
   };
 }
 
@@ -181,6 +220,7 @@ export function saveProfile(
     const app = await database();
     const current = await app.repositories.preferences.get();
     const now = new Date().toISOString();
+    const searchKey = profile.searchKey?.trim();
     await commitCredentialChange(
       providerCredentials,
       {
@@ -194,6 +234,15 @@ export function saveProfile(
           version: createCredentialVersion(),
           secret: profile.aiKey,
         },
+        ...(searchKey
+          ? {
+              search: {
+                kind: "search" as const,
+                version: createCredentialVersion(),
+                secret: searchKey,
+              },
+            }
+          : {}),
       },
       () =>
         app.repositories.preferences.save({
@@ -209,6 +258,7 @@ export function saveProfile(
                 decidedAt: now,
               }
             : current.researchConsent,
+          researchSource: profile.researchSource ?? current.researchSource,
           speechProvider: {
             providerId: profile.speechProvider,
             model: profile.speechModel.trim(),

@@ -19,14 +19,16 @@ import {
 } from "./config";
 
 type ProviderId = SpeechProviderId | AiProviderId;
+type RequestProviderId = ProviderId | "serpapi";
 
 type RequestOptions = Readonly<{
-  providerId: ProviderId;
+  providerId: RequestProviderId;
   operation: AppOperation;
   url: string;
   init: RequestInit;
   timeoutMs: number;
   attempts?: number;
+  includeProviderMessage?: boolean;
 }>;
 
 export type SseMessage = Readonly<{ event: string | null; data: string }>;
@@ -467,7 +469,10 @@ function timeoutError(options: RequestOptions) {
 }
 function statusError(options: RequestOptions, status: number) {
   let code: NormalizedErrorCode = "provider-rejected";
-  let message = `${providerName(options.providerId)} rejected the ${operationName(options.operation)} request (HTTP ${status}). Check the selected model.`;
+  let message =
+    options.providerId === "serpapi"
+      ? `SerpApi rejected the ${operationName(options.operation)} request (HTTP ${status}). Check the search configuration.`
+      : `${providerName(options.providerId)} rejected the ${operationName(options.operation)} request (HTTP ${status}). Check the selected model.`;
   let retryable = false;
   if (status === 401 || status === 403) {
     code = "authentication-failed";
@@ -482,7 +487,9 @@ function statusError(options: RequestOptions, status: number) {
     code = status === 429 ? "rate-limited" : "provider-unavailable";
     message =
       status === 429
-        ? "The provider rate limit was reached. Try again shortly."
+        ? options.providerId === "serpapi"
+          ? "The SerpApi quota or hourly limit was reached. Check the account, then try again."
+          : "The provider rate limit was reached. Try again shortly."
         : "The provider is temporarily busy. Try again.";
     retryable = true;
   } else if (status >= 500) {
@@ -504,6 +511,7 @@ async function responseStatusError(
   response: Response,
 ) {
   const fallback = statusError(options, response.status);
+  if (options.includeProviderMessage === false) return fallback;
   try {
     const payload: unknown = JSON.parse(
       await readBoundedResponseText(
@@ -555,6 +563,7 @@ function providerName(providerId: string) {
     google: "Google",
     claude: "Claude",
     custom: "Custom provider",
+    serpapi: "SerpApi",
   };
   return names[providerId] ?? providerId;
 }

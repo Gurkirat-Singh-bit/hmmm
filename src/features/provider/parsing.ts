@@ -9,10 +9,10 @@ import type { ReportContent } from "../domain/contracts";
 import type {
   DiscussionRequest,
   GeneratedReport,
+  ResearchCitation,
   ResearchResult,
-  ResearchSource,
 } from "../domain/providers";
-import { PROVIDER_RESPONSE_LIMITS } from "./config";
+import { PROVIDER_RESPONSE_LIMITS, RESEARCH_QUERY_LIMITS } from "./config";
 import { providerError } from "./transport";
 
 export type CitationInput = Readonly<{
@@ -27,7 +27,7 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 export function parseJsonObject(
   text: string,
   providerId: string,
-  operation: "report-generation" | "discussion",
+  operation: "report-generation" | "research" | "discussion",
 ) {
   if (text.length > PROVIDER_RESPONSE_LIMITS.structuredDocumentCharacters) {
     throw invalidOutput(providerId, operation);
@@ -49,6 +49,34 @@ export function parseJsonObject(
     "The provider returned invalid structured output. Try again.",
     true,
   );
+}
+
+/** Accepts exactly one bounded, printable search query from provider JSON. */
+export function parseResearchQuery(text: string, providerId: string) {
+  if (text.length > PROVIDER_RESPONSE_LIMITS.structuredDocumentCharacters)
+    throw invalidResearchOutput(providerId);
+  let value: unknown;
+  try {
+    value = JSON.parse(text.trim());
+  } catch {
+    throw invalidResearchOutput(providerId);
+  }
+  if (
+    !isRecord(value) ||
+    Object.keys(value).length !== 1 ||
+    typeof value.query !== "string"
+  ) {
+    throw invalidResearchOutput(providerId);
+  }
+  const query = value.query.trim();
+  if (
+    query.length < RESEARCH_QUERY_LIMITS.minCharacters ||
+    query.length > RESEARCH_QUERY_LIMITS.maxCharacters ||
+    /[\r\n\u0000-\u001f\u007f]/u.test(query)
+  ) {
+    throw invalidResearchOutput(providerId);
+  }
+  return query;
 }
 export function parseGeneratedReport(
   text: string,
@@ -183,9 +211,9 @@ export function normalizeCitations(
   if (citations.length > PROVIDER_RESPONSE_LIMITS.researchCitations) {
     throw invalidResearchOutput(providerId);
   }
-  const sources: ResearchSource[] = [];
+  const sources: ResearchCitation[] = [];
   const findings: ResearchResult["findings"][number][] = [];
-  const sourceByUrl = new Map<string, ResearchSource>();
+  const sourceByUrl = new Map<string, ResearchCitation>();
 
   for (const citation of citations) {
     const url = safeSourceUrl(citation.url);
@@ -367,11 +395,17 @@ export function safeSourceUrl(value: unknown) {
     return null;
   try {
     const url = new URL(value);
+    const hasCredentialParameter = [...url.searchParams.keys()].some((key) =>
+      /(?:^|[-_])(api[-_]?key|key|token|auth(?:orization)?|bearer|secret|password|credential|signature|sig|subscription[-_]?key)(?:$|[-_])/i.test(
+        key,
+      ),
+    );
     if (
       url.protocol !== "https:" ||
       url.username ||
       url.password ||
-      !url.hostname
+      !url.hostname ||
+      hasCredentialParameter
     )
       return null;
     return url.toString();
@@ -442,7 +476,7 @@ function boundedOptionalString(value: unknown, maxCharacters: number) {
 }
 function invalidOutput(
   providerId: string,
-  operation: "report-generation" | "discussion",
+  operation: "report-generation" | "research" | "discussion",
 ) {
   return providerError(
     "invalid-provider-output",

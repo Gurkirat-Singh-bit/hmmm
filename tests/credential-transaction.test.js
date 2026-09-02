@@ -93,4 +93,26 @@ describe("credential transaction", () => {
     expect(secrets.active.get("speech")).toEqual(previous.speech);
     expect(secrets.active.get("ai")).toEqual(previous.ai);
   });
+
+  test("replaces and rolls back the protected search credential", async () => {
+    const previous = { search: credential("search", "search-old") };
+    const secrets = fakeSecrets(previous);
+    await expect(
+      commitCredentialChange(
+        secrets,
+        { search: credential("search", "search-next") },
+        async () => {
+          throw new Error("sqlite failed");
+        },
+      ),
+    ).rejects.toThrow("sqlite failed");
+    expect(secrets.active.get("search")).toEqual(previous.search);
+
+    await commitCredentialChange(
+      secrets,
+      { search: credential("search", "search-next") },
+      async () => undefined,
+    );
+    expect(secrets.active.get("search").version).toBe("search-next");
+  });
 });

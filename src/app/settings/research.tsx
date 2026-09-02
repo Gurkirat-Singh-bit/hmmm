@@ -10,8 +10,16 @@ import {
   MagnifyingGlassIcon as MagnifyingGlass,
 } from "phosphor-react-native";
 import { useRouter } from "expo-router";
-import { Pressable, StyleSheet, Switch, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 
+import { SecretField } from "@/components/onboarding/OnboardingFields";
 import { SettingsSubpage } from "@/components/settings/SettingsSubpage";
 import { colors, onboardingFonts, radii } from "@/constants/theme";
 import { researchProviderDescription } from "@/features/provider/config";
@@ -23,42 +31,86 @@ export default function ResearchSettingsScreen() {
   const settings = useResearchSettings();
   const choose = (consent: "granted" | "denied") =>
     void settings.save(
-      settings.enabled && settings.provider.supportsResearch,
+      consent === "granted" && settings.enabled && settings.sourceReady,
       consent,
     );
   const researchSwitchDisabled =
-    settings.saving ||
-    (!settings.provider.supportsResearch && !settings.enabled);
+    settings.saving || (!settings.sourceReady && !settings.enabled);
+  const external = settings.source.kind === "external";
   return (
     <SettingsSubpage
-      supporting="Research is optional and runs directly with the selected AI provider. It never goes through a Hmmmidea server."
+      supporting="Choose AI-native search or SerpApi. Requests go directly from your device, never through a Hmmmidea server."
       title="Research"
     >
       <View style={styles.notice}>
         <MagnifyingGlass color={colors.ink} size={20} weight="bold" />
         <Text style={styles.noticeText}>
-          When a report is generated, Hmmmidea asks the provider to search the
-          claims that matter, then saves cited findings with that report
-          revision.
+          Research is explicit. Hmmmidea never switches search providers after a
+          failure, and your saved capture remains on this device.
         </Text>
       </View>
+      <Text style={styles.sectionLabel}>SEARCH SOURCE</Text>
+      <View accessibilityRole="radiogroup" style={styles.options}>
+        <ConsentOption
+          active={!external}
+          body="Uses the selected AI model's native search tools. Only supported models can enable it."
+          disabled={settings.saving}
+          label="AI-native search"
+          onPress={() => settings.setSource({ kind: "ai-native" })}
+        />
+        <ConsentOption
+          active={external}
+          body="Plans one Google query, then gives selected snippets and links to your AI provider."
+          disabled={settings.saving}
+          label="SerpApi"
+          onPress={() =>
+            settings.setSource({
+              kind: "external",
+              providerId: "serpapi",
+              engine: "google",
+            })
+          }
+        />
+      </View>
+      {external ? (
+        <View style={styles.searchCredential}>
+          <SecretField
+            attempted={settings.enabled && !settings.searchKey.trim()}
+            label="SERPAPI KEY"
+            light
+            onChangeText={settings.setSearchKey}
+            placeholder="Paste SerpApi key"
+            value={settings.searchKey}
+          />
+          <Text style={styles.retention}>
+            SerpApi says standard searches may be retained for 31 days.
+            ZeroTrace is available only on Enterprise plans.
+          </Text>
+        </View>
+      ) : null}
       <View
         style={[
           styles.provider,
-          !settings.provider.supportsResearch && styles.providerUnsupported,
+          !settings.sourceReady && styles.providerUnsupported,
         ]}
       >
-        <Text style={styles.providerEyebrow}>CURRENT SEARCH MODEL</Text>
-        <Text style={styles.providerTitle}>{settings.provider.label}</Text>
+        <Text style={styles.providerEyebrow}>CURRENT RESEARCH PATH</Text>
+        <Text style={styles.providerTitle}>
+          {external ? "SerpApi · Google" : settings.provider.label}
+        </Text>
         <Text numberOfLines={2} style={styles.providerModel}>
-          {settings.provider.model || "No model selected"}
+          {external
+            ? `Query planner: ${settings.provider.model || "No model selected"}`
+            : settings.provider.model || "No model selected"}
         </Text>
         <Text style={styles.providerStatus}>
-          {settings.provider.supportsResearch
-            ? "Web search is available for this setup."
-            : "This model cannot search from Hmmmidea."}
+          {settings.sourceReady
+            ? "Research is available for this setup."
+            : external
+              ? "Add a SerpApi key to enable research."
+              : "This model cannot use native search from Hmmmidea."}
         </Text>
-        {!settings.provider.supportsResearch ? (
+        {!external && !settings.provider.supportsResearch ? (
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push("/settings/providers")}
@@ -67,7 +119,9 @@ export default function ResearchSettingsScreen() {
               pressed && styles.pressed,
             ]}
           >
-            <Text style={styles.providerButtonText}>Choose a search model</Text>
+            <Text style={styles.providerButtonText}>
+              Choose a native-search model
+            </Text>
           </Pressable>
         ) : null}
       </View>
@@ -97,31 +151,38 @@ export default function ResearchSettingsScreen() {
           {settings.provider.label} · {settings.provider.model || "No model"}
         </Text>
         <Text style={styles.explanationBody}>
-          {researchProviderDescription(
-            settings.provider.id,
-            settings.provider.model,
-          )}
+          {external
+            ? "The selected AI model creates one query without web tools. SerpApi runs one Google search with SafeSearch active and cached results allowed."
+            : researchProviderDescription(
+                settings.provider.id,
+                settings.provider.model,
+              )}
         </Text>
         <Text style={styles.explanationBody}>
-          Only new or regenerated reports can research. Source titles, links,
-          and cited findings are stored locally with that report revision.
+          {external
+            ? "Only the derived query goes to SerpApi. Up to six selected titles, snippets, and links are then sent to your configured AI provider and stored with the report revision."
+            : "Only new or regenerated reports can research. Source titles, links, and cited findings are stored locally with that report revision."}{" "}
           Discuss never starts a web search.
         </Text>
       </View>
-      <Text style={styles.sectionLabel}>GROUNDING CONSENT</Text>
+      <Text style={styles.sectionLabel}>RESEARCH CONSENT</Text>
       <View accessibilityRole="radiogroup" style={styles.options}>
         <ConsentOption
           active={settings.consent === "granted"}
-          body="A research request may send a derived query and relevant transcript context to the selected AI provider."
+          body={
+            external
+              ? "Allow a derived query to go to SerpApi and selected snippets and links to go to the AI provider."
+              : "Allow relevant transcript context to go to the AI provider's native search tools."
+          }
           disabled={settings.saving}
-          label="Allow provider-native research"
+          label="Allow researched reports"
           onPress={() => choose("granted")}
         />
         <ConsentOption
           active={settings.consent === "denied"}
-          body="Reports use the transcript only. No provider-native grounding request is made."
+          body="Reports use the transcript only. No search request is made."
           disabled={settings.saving}
-          label="Keep provider-native research off"
+          label="Keep research off"
           onPress={() => choose("denied")}
         />
       </View>
@@ -135,6 +196,27 @@ export default function ResearchSettingsScreen() {
           {settings.message}
         </Text>
       ) : null}
+      <Pressable
+        accessibilityLabel="Verify and save research settings"
+        accessibilityRole="button"
+        accessibilityState={{
+          busy: settings.saving,
+          disabled: settings.saving,
+        }}
+        disabled={settings.saving}
+        onPress={() => void settings.saveCurrent()}
+        style={({ pressed }) => [
+          styles.saveButton,
+          pressed && styles.pressed,
+          settings.saving && styles.disabled,
+        ]}
+      >
+        {settings.saving ? (
+          <ActivityIndicator color={colors.inkInverse} />
+        ) : (
+          <Text style={styles.saveButtonText}>Verify and save research</Text>
+        )}
+      </Pressable>
       <Text style={styles.afterward}>
         After enabling research, return to an idea and regenerate its report.
         Discuss remains grounded in the saved idea and does not silently browse.
@@ -277,6 +359,19 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   options: { gap: 10 },
+  searchCredential: {
+    gap: 8,
+    marginTop: 12,
+    padding: 16,
+    borderRadius: radii.large,
+    backgroundColor: colors.surfaceMuted,
+  },
+  retention: {
+    color: colors.inkMuted,
+    fontFamily: onboardingFonts.bodyRegular,
+    fontSize: 11,
+    lineHeight: 17,
+  },
   explanation: {
     gap: 7,
     paddingVertical: 4,
@@ -327,6 +422,20 @@ const styles = StyleSheet.create({
     color: colors.inkMuted,
     fontFamily: onboardingFonts.bodyMedium,
     fontSize: 12,
+  },
+  saveButton: {
+    minHeight: 54,
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 16,
+    paddingHorizontal: 18,
+    borderRadius: radii.pill,
+    backgroundColor: colors.ink,
+  },
+  saveButtonText: {
+    color: colors.inkInverse,
+    fontFamily: onboardingFonts.bodyBold,
+    fontSize: 14,
   },
   afterward: {
     marginTop: 18,

@@ -103,6 +103,7 @@ export class SqliteExportSnapshotRepository implements ExportSnapshotRepository 
             languageTag: preferences.languageTag,
             researchEnabled: preferences.researchEnabled,
             researchConsent: preferences.researchConsent,
+            researchSource: preferences.researchSource,
             notifications: preferences.notifications,
             speechProvider: preferences.speechProvider,
             aiProvider: preferences.aiProvider,

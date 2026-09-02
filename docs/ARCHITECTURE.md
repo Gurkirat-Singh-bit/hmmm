@@ -189,6 +189,7 @@ Feature hooks / application services
         ├── audio adapter ─────── app document directory
         ├── speech adapter ────── configured speech API
         ├── AI adapter ────────── configured AI API
+        ├── search adapter ────── configured external search API
         └── export adapter ────── PDF / JSON / native share sheet
 ```
 
@@ -237,7 +238,7 @@ Storage boundaries:
 | Data | Storage | Reason |
 | --- | --- | --- |
 | Captures, reports, messages, jobs, preferences | SQLite | Durable, searchable, transactional |
-| Speech and AI API keys | SecureStore / OS keychain or keystore | Secrets stay out of app data and exports |
+| Speech, AI, and search API keys | SecureStore / OS keychain or keystore | Secrets stay out of app data and exports |
 | Original audio | App document directory | Large binary content does not belong in SQLite |
 | Full backup export | User-selected file through native sharing | Portable and intentionally initiated |
 
@@ -245,7 +246,7 @@ Deleting a capture must delete its messages, queued jobs, report, and referenced
 
 ## 7. Provider boundaries
 
-Speech and AI integrations use small provider-neutral interfaces.
+Speech, AI, and external search integrations use small provider-neutral interfaces.
 
 Speech capabilities may differ:
 
@@ -254,6 +255,8 @@ Speech capabilities may differ:
 - The UI must describe the selected behavior accurately; it must not promise live text for an upload-only provider.
 
 AI capabilities include naming, structured analysis, optional research/citations, and discussion. Model output must be parsed and validated before persistence. Invalid structured output is a recoverable job failure, not data to render optimistically.
+
+Research has two explicit paths. AI-native research uses the selected model's own search tools. External research asks that model to plan one bounded query without tools, sends the query to the selected search adapter, and returns validated snippets and links to the model for report generation. SerpApi with Google organic results is the initial external adapter. A failed path must stop the job with an actionable error and must never silently fall back to another provider.
 
 The provider catalog, base URLs, model defaults, supported capabilities, and request builders belong under provider/configuration modules. Validate custom endpoints and only permit secure network schemes in production.
 
@@ -265,6 +268,8 @@ The provider catalog, base URLs, model defaults, supported capabilities, and req
 - Users should be encouraged to use restricted, low-limit keys.
 - Export files omit secrets by construction.
 - Source and custom endpoint URLs must be validated before opening or requesting.
+- SerpApi authentication is placed in its request URL only inside the adapter. Credential-bearing URLs and raw responses must never enter errors, logs, telemetry, SQLite, or exports.
+- Consent copy must disclose that standard SerpApi searches may be retained for 31 days and that ZeroTrace is limited to Enterprise plans.
 - No analytics or telemetry should be introduced without an explicit product decision and disclosure.
 
 The local-first model protects ownership but is not the same as end-to-end encryption. A compromised or rooted device can expose local files or runtime secrets.

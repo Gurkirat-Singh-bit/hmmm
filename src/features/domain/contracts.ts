@@ -247,6 +247,14 @@ export type ResearchConsent = Readonly<{
   decidedAt: IsoTimestamp | null;
 }>;
 
+export type ResearchSource =
+  | Readonly<{ kind: "ai-native" }>
+  | Readonly<{
+      kind: "external";
+      providerId: "serpapi";
+      engine: "google";
+    }>;
+
 /** SQLite-safe preferences. Provider credentials are deliberately absent. */
 export type AppPreferencesRecord = Readonly<{
   id: "app";
@@ -255,6 +263,7 @@ export type AppPreferencesRecord = Readonly<{
   onboardingComplete: boolean;
   researchEnabled: boolean;
   researchConsent: ResearchConsent;
+  researchSource: ResearchSource;
   notifications: NotificationPreferences;
   speechProvider: ProviderSelection;
   aiProvider: ProviderSelection;
@@ -262,7 +271,7 @@ export type AppPreferencesRecord = Readonly<{
   updatedAt: IsoTimestamp;
 }>;
 
-export type CredentialKind = "speech" | "ai";
+export type CredentialKind = "speech" | "ai" | "search";
 export type CredentialVersion = string;
 
 export type ActiveCredential = Readonly<{
@@ -355,6 +364,7 @@ export type ExportedPreferences = Readonly<{
   languageTag: string;
   researchEnabled: boolean;
   researchConsent: ResearchConsent;
+  researchSource: ResearchSource;
   notifications: NotificationPreferences;
   speechProvider: ProviderSelection;
   aiProvider: ProviderSelection;

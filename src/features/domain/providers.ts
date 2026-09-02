@@ -138,7 +138,10 @@ export interface SpeechProviderPort {
   ) => Promise<LiveTranscriptionSessionPort>;
 }
 
-export type ResearchSource = Omit<SourceRecord, "captureId" | "reportRevision">;
+export type ResearchCitation = Omit<
+  SourceRecord,
+  "captureId" | "reportRevision"
+>;
 
 export type ResearchFinding = Readonly<{
   id: string;
@@ -148,7 +151,7 @@ export type ResearchFinding = Readonly<{
 
 export type ResearchResult = Readonly<{
   findings: readonly ResearchFinding[];
-  sources: readonly ResearchSource[];
+  sources: readonly ResearchCitation[];
 }>;
 
 export type ReportGenerationRequest = Readonly<{
@@ -166,7 +169,7 @@ export type GeneratedReport = Readonly<{
   summary: string;
   kind: string;
   content: ReportContent;
-  sources: readonly ResearchSource[];
+  sources: readonly ResearchCitation[];
 }>;
 
 export type ResearchRequest = Readonly<{
@@ -175,6 +178,30 @@ export type ResearchRequest = Readonly<{
   transcript: string;
   languageTag: string;
 }>;
+
+export type ResearchQueryRequest = Readonly<{
+  requestId: string;
+  captureId: CaptureId;
+  transcript: string;
+  languageTag: string;
+}>;
+
+export type SearchProviderContext = Readonly<{ apiKey: string | null }>;
+
+export type SearchRequest = Readonly<{
+  requestId: string;
+  query: string;
+  engine: "google";
+}>;
+
+export interface SearchProviderPort {
+  readonly descriptor: Readonly<{ id: string; kind: "search" }>;
+  probe(context: SearchProviderContext): Promise<void>;
+  search(
+    context: SearchProviderContext,
+    request: SearchRequest,
+  ): Promise<ResearchResult>;
+}
 
 export type DiscussionContextMessage = Readonly<{
   id: MessageId;
@@ -212,6 +239,10 @@ export type DiscussionStreamEvent =
 
 export interface AiProviderPort {
   readonly descriptor: ProviderDescriptor & Readonly<{ kind: "ai" }>;
+  planResearchQuery: (
+    context: ProviderContext,
+    request: ResearchQueryRequest,
+  ) => Promise<string>;
   /** Present exactly when ai.research-with-citations is true. */
   research?: (
     context: ProviderContext,
@@ -237,4 +268,5 @@ export interface AiProviderPort {
 export interface ProviderRegistryPort {
   getSpeech(providerId: string): SpeechProviderPort | null;
   getAi(providerId: string): AiProviderPort | null;
+  getSearch(providerId: string): SearchProviderPort | null;
 }

@@ -16,7 +16,7 @@ const sections = [
   ],
   [
     "Provider requests",
-    "Source audio is sent directly to the speech provider you configure for transcription. Transcripts are sent directly to the AI provider for reports and discussion. Their own privacy terms apply.",
+    "Source audio is sent directly to the speech provider you configure for transcription. Transcripts are sent directly to the AI provider for reports and discussion. If you choose SerpApi research, a derived query goes directly to SerpApi and selected result snippets and links then go to your AI provider. Their own privacy terms apply.",
   ],
   [
     "Protected credentials",
@@ -24,7 +24,11 @@ const sections = [
   ],
   [
     "Research consent",
-    "Research remains available only when you explicitly allow the selected AI provider’s own grounding or search tools to receive a query derived from your transcript and relevant context. You can change this in Settings.",
+    "Research runs only after you explicitly allow it. AI-native search shares relevant transcript context with your AI provider. SerpApi receives one derived query, and up to six selected snippets and links are then provided to your AI provider. Hmmmidea never switches paths after a failure.",
+  ],
+  [
+    "SerpApi retention",
+    "SerpApi states that standard search data may be retained for 31 days. Its ZeroTrace non-retention mode is available only on Enterprise plans. Check SerpApi’s current terms before enabling external research.",
   ],
   [
     "Your control",
@@ -40,7 +44,7 @@ const sections = [
   ],
   [
     "Network boundaries",
-    "Only the content needed for a requested transcription, analysis, research, or discussion is sent to the provider you selected. Hmmmidea does not proxy those requests through its own backend.",
+    "Only the content needed for a requested transcription, analysis, research, or discussion is sent to the provider you selected. Hmmmidea does not proxy those requests through its own backend or silently fall back to another search provider.",
   ],
   [
     "Deletion and retention",

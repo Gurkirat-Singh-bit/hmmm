@@ -10,6 +10,12 @@ import type {
   ProviderDescriptor,
   ProviderKind,
 } from "../domain/providers";
+import type { ResearchSource } from "../domain/contracts";
+
+export const RESEARCH_SOURCES = {
+  aiNative: { kind: "ai-native" },
+  serpApi: { kind: "external", providerId: "serpapi", engine: "google" },
+} as const satisfies Record<string, ResearchSource>;
 
 export const PROVIDER_ENDPOINTS = {
   anthropic: "https://api.anthropic.com/v1",
@@ -19,6 +25,7 @@ export const PROVIDER_ENDPOINTS = {
   groq: "https://api.groq.com/openai/v1",
   openai: "https://api.openai.com/v1",
   openrouter: "https://openrouter.ai/api/v1",
+  serpapi: "https://serpapi.com",
 } as const;
 
 export const PROVIDER_TIMEOUT_MS = {
@@ -54,6 +61,13 @@ export const PROVIDER_CONTEXT_LIMITS = {
   discussionTranscriptCharacters: 40_000,
   discussionMessages: 24,
   discussionMessageCharacters: 8_000,
+} as const;
+
+export const RESEARCH_QUERY_LIMITS = {
+  minCharacters: 8,
+  maxCharacters: 240,
+  organicResults: 6,
+  organicResponseResults: 100,
 } as const;
 
 /** Bounds the editable report instructions stored in local preferences. */

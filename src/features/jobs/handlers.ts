@@ -235,16 +235,6 @@ export function createReportHandler(
         preferences.researchConsent.status === "granted";
       let research: ResearchResult | null = null;
       if (researchAllowed) {
-        if (
-          !provider.descriptor.capabilities["ai.research-with-citations"] ||
-          !provider.research
-        ) {
-          throw domainError(
-            "unsupported",
-            "research",
-            "This AI provider cannot perform cited research.",
-          );
-        }
         if (!isProvisional) {
           await dependencies.repositories.captures.setProcessingState(
             job.captureId,
@@ -254,16 +244,58 @@ export function createReportHandler(
             job.generation,
           );
         }
-        try {
+        if (preferences.researchSource.kind === "ai-native") {
+          if (
+            !provider.descriptor.capabilities["ai.research-with-citations"] ||
+            !provider.research
+          ) {
+            throw domainError(
+              "unsupported",
+              "research",
+              "This AI provider cannot perform native cited research. Choose SerpApi or a supported AI model.",
+            );
+          }
           research = await provider.research(context, {
             requestId: `${job.requestId}:research`,
             captureId: job.captureId,
             transcript: capture!.transcript!.text,
             languageTag: preferences.languageTag,
           });
-        } catch (error) {
-          if (provider.descriptor.id !== "openrouter") throw error;
-          research = null;
+        } else {
+          const source = preferences.researchSource;
+          const searchProvider = dependencies.providers.getSearch(
+            source.providerId,
+          );
+          if (!searchProvider) {
+            throw domainError(
+              "unsupported",
+              "research",
+              "The selected external search provider is not supported.",
+            );
+          }
+          const searchCredential =
+            await dependencies.secrets.readActive("search");
+          if (!searchCredential?.secret.trim()) {
+            throw domainError(
+              "configuration-missing",
+              "research",
+              "Add a SerpApi key in Research settings before generating a researched report.",
+            );
+          }
+          const query = await provider.planResearchQuery(context, {
+            requestId: `${job.requestId}:research:plan`,
+            captureId: job.captureId,
+            transcript: capture!.transcript!.text,
+            languageTag: preferences.languageTag,
+          });
+          research = await searchProvider.search(
+            { apiKey: searchCredential.secret },
+            {
+              requestId: `${job.requestId}:research:search`,
+              query,
+              engine: source.engine,
+            },
+          );
         }
       } else if (!isProvisional) {
         await dependencies.repositories.captures.setProcessingState(

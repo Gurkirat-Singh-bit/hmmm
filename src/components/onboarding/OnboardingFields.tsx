@@ -23,6 +23,7 @@ import {
   ProviderLogoId,
 } from "@/components/onboarding/ProviderLogo";
 import { ProviderDefinition } from "@/features/onboarding/provider-config";
+import type { ResearchSource } from "@/features/domain/contracts";
 export function ProviderChoices<T extends string>({
   light = false,
   options,
@@ -199,13 +200,26 @@ export function NameField({
 }
 export function ResearchTransferChoices({
   attempted,
+  nativeSupported,
+  providerLabel,
+  searchKey,
+  source,
   value,
   onChange,
+  onSearchKeyChange,
+  onSourceChange,
 }: {
   attempted: boolean;
+  nativeSupported: boolean;
+  providerLabel: string;
+  searchKey: string;
+  source: ResearchSource;
   value: "unknown" | "granted" | "denied";
   onChange(value: "granted" | "denied"): void;
+  onSearchKeyChange(value: string): void;
+  onSourceChange(value: ResearchSource): void;
 }) {
+  const external = source.kind === "external";
   return (
     <View style={styles.researchGroup}>
       <View style={styles.researchHeading}>
@@ -215,11 +229,54 @@ export function ResearchTransferChoices({
         <View style={styles.researchCopy}>
           <Text style={styles.researchTitle}>Use web search?</Text>
           <Text style={styles.researchBody}>
-            Your AI provider may search using a short query from your
-            transcript.
+            Choose who searches, then decide whether researched reports are
+            allowed.
           </Text>
         </View>
       </View>
+      <Text style={styles.label}>RESEARCH SOURCE</Text>
+      <View accessibilityRole="radiogroup" style={styles.researchChoices}>
+        <ResearchChoice
+          active={!external}
+          body={`Uses ${providerLabel}'s native search tools. A compatible model is required.`}
+          label="AI-native search"
+          onPress={() => onSourceChange({ kind: "ai-native" })}
+        />
+        <ResearchChoice
+          active={external}
+          body="Plans one Google query, then sends selected snippets and links to your AI provider."
+          label="SerpApi"
+          onPress={() =>
+            onSourceChange({
+              kind: "external",
+              providerId: "serpapi",
+              engine: "google",
+            })
+          }
+        />
+      </View>
+      {external ? (
+        <View style={styles.fieldGroup}>
+          <SecretField
+            attempted={attempted && value === "granted"}
+            label="SERPAPI KEY"
+            onChangeText={onSearchKeyChange}
+            placeholder="Paste SerpApi key"
+            value={searchKey}
+          />
+          <Text style={styles.researchBody}>
+            Standard SerpApi searches may be retained for 31 days. ZeroTrace is
+            available only on Enterprise plans.
+          </Text>
+        </View>
+      ) : null}
+      {attempted && value === "granted" && !external && !nativeSupported ? (
+        <FieldStatus
+          error
+          message="Choose a native-search model or use SerpApi"
+        />
+      ) : null}
+      <Text style={styles.label}>CONSENT</Text>
       <View accessibilityRole="radiogroup" style={styles.researchChoices}>
         <Pressable
           accessibilityLabel="Use web search for sourced reports"
@@ -285,6 +342,49 @@ export function ResearchTransferChoices({
         />
       ) : null}
     </View>
+  );
+}
+function ResearchChoice({
+  active,
+  body,
+  label,
+  onPress,
+}: {
+  active: boolean;
+  body: string;
+  label: string;
+  onPress(): void;
+}) {
+  return (
+    <Pressable
+      accessibilityHint={body}
+      accessibilityLabel={label}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: active }}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.researchChoice,
+        active && styles.researchChoiceSelected,
+        pressed && styles.pressed,
+      ]}
+    >
+      <Text
+        style={[
+          styles.researchChoiceTitle,
+          active && styles.researchChoiceTextSelected,
+        ]}
+      >
+        {label}
+      </Text>
+      <Text
+        style={[
+          styles.researchChoiceBody,
+          active && styles.researchChoiceTextSelected,
+        ]}
+      >
+        {body}
+      </Text>
+    </Pressable>
   );
 }
 export function SecretField({

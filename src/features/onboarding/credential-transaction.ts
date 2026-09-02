@@ -13,10 +13,10 @@ import type {
 import { domainError } from "@/features/domain/errors";
 
 /**
- * Activates both provider credentials and publishes their matching preferences as one logical change.
+ * Activates provider credentials and publishes their matching preferences as one logical change.
  *
  * @param secrets - Protected storage implementation that owns credential values.
- * @param next - New speech and AI credentials to activate.
+ * @param next - New credentials to activate.
  * @param publish - Persists the matching non-secret provider selections.
  * @returns A promise that resolves after secrets and preferences are committed.
  * @throws A storage error when activation, publication, or rollback fails.
@@ -24,31 +24,34 @@ import { domainError } from "@/features/domain/errors";
  */
 export async function commitCredentialChange(
   secrets: SecretStorePort,
-  next: Readonly<Record<CredentialKind, ActiveCredential>>,
+  next: Readonly<Partial<Record<CredentialKind, ActiveCredential>>>,
   publish: () => Promise<void>,
 ): Promise<void> {
-  const previous = {
-    speech: await secrets.readActive("speech"),
-    ai: await secrets.readActive("ai"),
-  } as const;
+  const kinds = Object.keys(next) as CredentialKind[];
+  const previous = new Map(
+    await Promise.all(
+      kinds.map(
+        async (kind) => [kind, await secrets.readActive(kind)] as const,
+      ),
+    ),
+  );
 
   try {
-    await secrets.activate(next.speech);
-    await secrets.activate(next.ai);
+    for (const kind of kinds) await secrets.activate(next[kind]!);
     await publish();
   } catch (error) {
     const rollback = await Promise.allSettled(
-      (["speech", "ai"] as const).map((kind) =>
-        previous[kind]
-          ? secrets.activate(previous[kind])
-          : secrets.deleteVersion(kind, next[kind].version),
+      kinds.map((kind) =>
+        previous.get(kind)
+          ? secrets.activate(previous.get(kind)!)
+          : secrets.deleteVersion(kind, next[kind]!.version),
       ),
     );
     if (rollback.some((result) => result.status === "rejected")) {
       throw domainError(
         "storage-failed",
         "provider-configuration",
-        "Provider setup failed and protected credentials could not be restored. Re-enter both keys.",
+        "Provider setup failed and protected credentials could not be restored. Re-enter the provider keys.",
         true,
       );
     }

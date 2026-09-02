@@ -8,7 +8,10 @@
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 
-import type { ResearchConsent } from "@/features/domain/contracts";
+import type {
+  ResearchConsent,
+  ResearchSource,
+} from "@/features/domain/contracts";
 import { normalizeError } from "@/features/domain/errors";
 import {
   defaultAiModel,
@@ -22,6 +25,11 @@ import {
 } from "@/features/onboarding/provider-config";
 import { readProfile, saveProfile } from "@/features/onboarding/storage";
 import { probeSelectedProviders } from "@/features/provider/probes";
+import {
+  RESEARCH_SOURCES,
+  supportsProviderResearch,
+} from "@/features/provider/config";
+import { serpApiSearchProvider } from "@/features/provider/search/serpapi";
 import { refreshAppRuntime } from "@/features/runtime/app-runtime";
 
 export const onboardingStepCount = 3;
@@ -45,6 +53,10 @@ export function useOnboardingFlow() {
   const [aiEndpoint, setAiEndpoint] = useState("");
   const [researchConsent, setResearchConsent] =
     useState<ResearchDecision>("unknown");
+  const [researchSource, setResearchSource] = useState<ResearchSource>(
+    RESEARCH_SOURCES.aiNative,
+  );
+  const [searchKey, setSearchKey] = useState("");
   const [attempted, setAttempted] = useState(false);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<OnboardingNotice>(null);
@@ -76,6 +88,8 @@ export function useOnboardingFlow() {
         );
         setAiKey(profile.aiKey);
         setAiEndpoint(profile.aiEndpoint);
+        setResearchSource(profile.researchSource ?? RESEARCH_SOURCES.aiNative);
+        setSearchKey(profile.searchKey ?? "");
       })
       .catch(() =>
         setNotice({
@@ -98,7 +112,11 @@ export function useOnboardingFlow() {
             aiKey.trim() &&
             aiModel.trim() &&
             (aiProvider !== "custom" || aiEndpoint.trim()) &&
-            researchConsent !== "unknown",
+            researchConsent !== "unknown" &&
+            (researchConsent === "denied" ||
+              (researchSource.kind === "external"
+                ? searchKey.trim()
+                : supportsProviderResearch(aiProvider, aiModel))),
           );
   const moveTo = (nextStep: OnboardingStep) => {
     setAttempted(false);
@@ -131,10 +149,15 @@ export function useOnboardingFlow() {
       endpoint: aiEndpoint.trim() || null,
     };
     try {
-      await probeSelectedProviders({
-        speech: { selection: speech, apiKey: speechKey.trim() },
-        ai: { selection: ai, apiKey: aiKey.trim() },
-      });
+      await Promise.all([
+        probeSelectedProviders({
+          speech: { selection: speech, apiKey: speechKey.trim() },
+          ai: { selection: ai, apiKey: aiKey.trim() },
+        }),
+        researchConsent === "granted" && researchSource.kind === "external"
+          ? serpApiSearchProvider.probe({ apiKey: searchKey.trim() })
+          : Promise.resolve(),
+      ]);
       await saveProfile(
         {
           name,
@@ -146,10 +169,15 @@ export function useOnboardingFlow() {
           aiModel,
           aiKey,
           aiEndpoint,
+          researchSource,
+          searchKey:
+            researchConsent === "granted" && researchSource.kind === "external"
+              ? searchKey
+              : "",
         },
         {
           onboardingComplete: true,
-          researchEnabled: true,
+          researchEnabled: researchConsent === "granted",
           researchConsent: researchConsent as Exclude<
             ResearchConsent["status"],
             "unknown"
@@ -165,7 +193,9 @@ export function useOnboardingFlow() {
           ? findSpeechProvider(speechProvider).label
           : detail.providerId === aiProvider
             ? findAiProvider(aiProvider).label
-            : "Provider";
+            : detail.providerId === "serpapi"
+              ? "SerpApi"
+              : "Provider";
       setNotice({ title: `${provider} check failed`, body: detail.message });
     } finally {
       setSaving(false);
@@ -194,6 +224,10 @@ export function useOnboardingFlow() {
     setAiEndpoint,
     researchConsent,
     setResearchConsent,
+    researchSource,
+    setResearchSource,
+    searchKey,
+    setSearchKey,
     attempted,
     saving,
     notice,

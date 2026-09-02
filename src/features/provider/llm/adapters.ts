@@ -12,6 +12,7 @@ import type {
   DiscussionStreamEvent,
   ProviderContext,
   ReportGenerationRequest,
+  ResearchQueryRequest,
   ResearchRequest,
   ResearchResult,
 } from "../../domain/providers";
@@ -31,16 +32,19 @@ import {
   isRecord,
   normalizeCitations,
   parseGeneratedReport,
+  parseResearchQuery,
   requireResponseText,
   type CitationInput,
 } from "../parsing";
 import {
   DISCUSSION_JSON_SCHEMA,
   REPORT_JSON_SCHEMA,
+  RESEARCH_QUERY_JSON_SCHEMA,
   discussionMessages,
   discussionSystemPrompt,
   reportSystemPrompt,
   reportUserPrompt,
+  researchQueryPrompt,
   researchPrompt,
 } from "./prompts";
 import {
@@ -65,6 +69,8 @@ function aiProvider(providerId: AiProviderId): AiProviderPort {
   };
   return {
     descriptor,
+    planResearchQuery: (context, request) =>
+      planResearchQuery(providerId, context, request),
     ...(descriptor.capabilities["ai.research-with-citations"]
       ? {
           research: (context: ProviderContext, request: ResearchRequest) =>
@@ -78,6 +84,28 @@ function aiProvider(providerId: AiProviderId): AiProviderPort {
     streamDiscussion: (context, request) =>
       streamDiscussion(providerId, context, request),
   };
+}
+async function planResearchQuery(
+  providerId: AiProviderId,
+  context: ProviderContext,
+  request: ResearchQueryRequest,
+) {
+  const { apiKey, model } = requireProviderContext(context, providerId);
+  const payload = await requestJson({
+    providerId,
+    operation: "research",
+    url: generationUrl(providerId, context, model, false),
+    init: {
+      method: "POST",
+      headers: requestHeaders(providerId, apiKey, request.requestId),
+      body: JSON.stringify(researchQueryBody(providerId, model, request)),
+    },
+    timeoutMs: PROVIDER_TIMEOUT_MS.ai,
+  });
+  return parseResearchQuery(
+    responseText(providerId, payload, "research"),
+    providerId,
+  );
 }
 async function generateReport(
   providerId: AiProviderId,
@@ -342,6 +370,55 @@ function researchBody(
     compound_custom: { tools: { enabled_tools: ["web_search"] } },
   };
 }
+function researchQueryBody(
+  providerId: AiProviderId,
+  model: string,
+  request: ResearchQueryRequest,
+) {
+  const prompt = researchQueryPrompt(request);
+  if (providerId === "openai") {
+    return {
+      model,
+      input: prompt,
+      temperature: 0,
+      max_output_tokens: 128,
+      text: {
+        format: {
+          type: "json_schema",
+          name: "research_query",
+          strict: true,
+          schema: RESEARCH_QUERY_JSON_SCHEMA,
+        },
+      },
+    };
+  }
+  if (providerId === "google") {
+    return {
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0,
+        maxOutputTokens: 128,
+        responseMimeType: "application/json",
+        responseJsonSchema: RESEARCH_QUERY_JSON_SCHEMA,
+      },
+    };
+  }
+  if (providerId === "claude") {
+    return {
+      model,
+      max_tokens: 128,
+      temperature: 0,
+      messages: [{ role: "user", content: prompt }],
+    };
+  }
+  return {
+    model,
+    messages: [{ role: "user", content: prompt }],
+    temperature: 0,
+    max_tokens: 128,
+    response_format: { type: "json_object" },
+  };
+}
 function generationUrl(
   providerId: AiProviderId,
   context: ProviderContext,
@@ -360,7 +437,7 @@ function generationUrl(
 function responseText(
   providerId: AiProviderId,
   payload: unknown,
-  operation: "report-generation" | "discussion",
+  operation: "report-generation" | "research" | "discussion",
 ) {
   const text =
     providerId === "openai"

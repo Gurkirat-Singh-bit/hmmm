@@ -8,6 +8,7 @@
 import type {
   DiscussionRequest,
   ReportGenerationRequest,
+  ResearchQueryRequest,
   ResearchRequest,
 } from "../../domain/providers";
 import { PROVIDER_CONTEXT_LIMITS, SYSTEM_PROMPT_LIMITS } from "../config";
@@ -77,6 +78,13 @@ export const DISCUSSION_JSON_SCHEMA = {
   },
 } as const;
 
+export const RESEARCH_QUERY_JSON_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  required: ["query"],
+  properties: { query: { type: "string" } },
+} as const;
+
 /** Default editable instructions used to turn a capture into an idea report. */
 export const DEFAULT_REPORT_SYSTEM_PROMPT = `You turn a spoken idea into a concise, practical report.
 Preserve the speaker's intent, important details, and uncertainty. Make the gist two to four short sentences that explain the idea without repeating itself. Keep the title specific, the summary to one sentence, risks concrete, and nextMove to one action the speaker can take now. The verdict should be a brief, honest assessment or null.
@@ -141,6 +149,15 @@ export function researchPrompt(request: ResearchRequest) {
     PROVIDER_CONTEXT_LIMITS.reportTranscriptCharacters,
   );
   return `Research the claims that would most change whether this spoken idea is useful or feasible. Look for current evidence about the problem, intended users, existing alternatives, constraints, and material risks. Ignore claims that do not need external verification. Return a concise synthesis in ${request.languageTag}, separating supported facts from uncertainty. Cite every factual finding using the provider's native web citations. Never invent or manually format source URLs. Do not use em dashes, en dashes, or Markdown tables.\n\nIDEA:\n${transcript}`;
+}
+
+/** Builds a tool-free request for one concise English web-search query. */
+export function researchQueryPrompt(request: ResearchQueryRequest) {
+  const transcript = request.transcript.slice(
+    0,
+    PROVIDER_CONTEXT_LIMITS.reportTranscriptCharacters,
+  );
+  return `Plan one Google search query that would find the evidence most likely to confirm or challenge this spoken idea. Focus on the problem, intended users, alternatives, constraints, or material risks. Return only JSON shaped as {"query":string}. The query must be one English line between 8 and 240 characters. Do not answer the query, cite sources, or use tools.\n\nIDEA:\n${transcript}`;
 }
 
 /** Builds discussion instructions with saved idea context and optional user style. */
