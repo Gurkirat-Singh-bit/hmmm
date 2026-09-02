@@ -492,7 +492,28 @@ class DiscussionService {
           }
         } catch (error) {
           await flushDelta().catch(() => undefined);
-          throw error;
+          if (
+            receivedFirstDelta ||
+            !provider.completeDiscussion ||
+            !canRetryWithoutStreaming(error)
+          ) {
+            throw error;
+          }
+          const response = await provider.completeDiscussion(context, request);
+          await active.database.repositories.messages.appendAssistantDelta(
+            assistant.id,
+            active.generation,
+            persistedSequence + 1,
+            response.content,
+            new Date().toISOString(),
+          );
+          await active.database.repositories.messages.finishAssistant(
+            assistant.id,
+            active.generation,
+            response.reportUpdateProposal,
+            response.completedAt,
+          );
+          completed = true;
         }
       }
       if (!completed)
@@ -731,6 +752,15 @@ function isStaleGeneration(error: unknown) {
     error instanceof DomainError &&
     (error.detail.code === "cancelled" || error.detail.code === "not-found")
   );
+}
+function canRetryWithoutStreaming(error: unknown) {
+  if (!(error instanceof DomainError)) return true;
+  return [
+    "offline",
+    "timeout",
+    "provider-unavailable",
+    "invalid-provider-output",
+  ].includes(error.detail.code);
 }
 function deletedCaptureError() {
   return domainError(

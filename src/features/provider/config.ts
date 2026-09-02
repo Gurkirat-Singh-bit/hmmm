@@ -28,6 +28,9 @@ export const PROVIDER_ENDPOINTS = {
   serpapi: "https://serpapi.com",
 } as const;
 
+/** Official SerpApi account page where users can create or copy their own key. */
+export const SERPAPI_MANAGE_KEY_URL = "https://serpapi.com/manage-api-key";
+
 export const PROVIDER_TIMEOUT_MS = {
   catalog: 15_000,
   probe: 20_000,

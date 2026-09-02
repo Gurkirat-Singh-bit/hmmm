@@ -91,7 +91,7 @@ export function OnboardingFooter({
               ? "Checking configured connections"
               : complete
                 ? finalStep
-                  ? "Consent and setup are ready"
+                  ? "Review complete, verify connections"
                   : "Go to the next step"
                 : "Complete this step first"}
           </Text>

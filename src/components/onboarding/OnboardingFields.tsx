@@ -6,6 +6,7 @@
  */
 
 import {
+  ArrowSquareOutIcon as ArrowSquareOut,
   CheckCircleIcon as CheckCircle,
   CheckIcon as Check,
   EyeIcon as Eye,
@@ -14,6 +15,7 @@ import {
   MagnifyingGlassIcon as MagnifyingGlass,
   WarningCircleIcon as WarningCircle,
 } from "phosphor-react-native";
+import * as Linking from "expo-linking";
 import { useState } from "react";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
@@ -24,6 +26,7 @@ import {
 } from "@/components/onboarding/ProviderLogo";
 import { ProviderDefinition } from "@/features/onboarding/provider-config";
 import type { ResearchSource } from "@/features/domain/contracts";
+import { SERPAPI_MANAGE_KEY_URL } from "@/features/provider/config";
 export function ProviderChoices<T extends string>({
   light = false,
   options,
@@ -257,6 +260,29 @@ export function ResearchTransferChoices({
       </View>
       {external ? (
         <View style={styles.fieldGroup}>
+          <Text style={styles.researchBody}>
+            SerpApi is a separate Google-results service. Hmmmidea uses it only
+            for optional sourced reports. It is not used for transcription or
+            Discuss, and you do not need it if you choose AI-native search or no
+            search.
+          </Text>
+          <Pressable
+            accessibilityHint="Opens the official SerpApi account page"
+            accessibilityLabel="Create a SerpApi account or get an API key"
+            accessibilityRole="link"
+            onPress={() =>
+              void Linking.openURL(SERPAPI_MANAGE_KEY_URL).catch(
+                () => undefined,
+              )
+            }
+            style={({ pressed }) => [
+              styles.serpApiLink,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.serpApiLinkText}>Get a SerpApi key</Text>
+            <ArrowSquareOut color={colors.ink} size={17} weight="bold" />
+          </Pressable>
           <SecretField
             attempted={attempted && value === "granted"}
             label="SERPAPI KEY"
@@ -646,6 +672,20 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   researchChoiceTextSelected: { color: colors.ink },
+  serpApiLink: {
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 14,
+    borderRadius: radii.medium,
+    backgroundColor: colors.primary,
+  },
+  serpApiLinkText: {
+    color: colors.ink,
+    fontFamily: onboardingFonts.bodySemiBold,
+    fontSize: 12,
+  },
   secretVisibility: {
     width: 48,
     height: 48,

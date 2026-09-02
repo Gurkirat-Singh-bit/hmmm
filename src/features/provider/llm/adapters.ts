@@ -31,6 +31,7 @@ import {
   extractOpenAiText,
   isRecord,
   normalizeCitations,
+  parseDiscussionEnvelope,
   parseGeneratedReport,
   parseResearchQuery,
   requireResponseText,
@@ -158,17 +159,25 @@ async function completeDiscussion(
   context: ProviderContext,
   request: DiscussionRequest,
 ): Promise<DiscussionResponse> {
-  let content = "";
-  let reportUpdateProposal: DiscussionResponse["reportUpdateProposal"] = null;
-  let completedAt = new Date().toISOString();
-  for await (const event of streamDiscussion(providerId, context, request)) {
-    if (event.type === "delta") content += event.content;
-    else {
-      reportUpdateProposal = event.reportUpdateProposal;
-      completedAt = event.completedAt;
-    }
-  }
-  return { content, reportUpdateProposal, completedAt };
+  const { apiKey, model } = requireProviderContext(context, providerId);
+  const payload = await requestJson({
+    providerId,
+    operation: "discussion",
+    url: generationUrl(providerId, context, model, false),
+    init: {
+      method: "POST",
+      headers: requestHeaders(providerId, apiKey, request.requestId),
+      body: JSON.stringify(discussionBody(providerId, model, request, false)),
+    },
+    timeoutMs: PROVIDER_TIMEOUT_MS.discussion,
+    attempts: 1,
+  });
+  const parsed = parseDiscussionEnvelope(
+    responseText(providerId, payload, "discussion"),
+    providerId,
+    request,
+  );
+  return { ...parsed, completedAt: new Date().toISOString() };
 }
 async function* streamDiscussion(
   providerId: AiProviderId,
@@ -188,7 +197,7 @@ async function* streamDiscussion(
         ...requestHeaders(providerId, apiKey, request.requestId),
         Accept: "text/event-stream",
       },
-      body: JSON.stringify(discussionBody(providerId, model, request)),
+      body: JSON.stringify(discussionBody(providerId, model, request, true)),
     },
     timeoutMs: PROVIDER_TIMEOUT_MS.discussion,
     attempts: 1,
@@ -274,6 +283,7 @@ function discussionBody(
   providerId: AiProviderId,
   model: string,
   request: DiscussionRequest,
+  stream: boolean,
 ) {
   const system = discussionSystemPrompt(request);
   const messages = discussionMessages(request);
@@ -290,7 +300,7 @@ function discussionBody(
           schema: DISCUSSION_JSON_SCHEMA,
         },
       },
-      stream: true,
+      stream,
     };
   }
   if (providerId === "google") {
@@ -308,20 +318,20 @@ function discussionBody(
     };
   }
   if (providerId === "claude") {
-    return { model, max_tokens: 2_500, system, messages, stream: true };
+    return { model, max_tokens: 2_500, system, messages, stream };
   }
   if (providerId === "openrouter") {
     return {
       model,
       messages: [{ role: "system", content: system }, ...messages],
-      stream: true,
+      stream,
       temperature: 0.5,
     };
   }
   return {
     model,
     messages: [{ role: "system", content: system }, ...messages],
-    stream: true,
+    stream,
     temperature: 0.5,
     response_format: { type: "json_object" },
   };

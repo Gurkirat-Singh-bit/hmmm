@@ -43,6 +43,11 @@ const questions = [
       "No. API keys are deliberately excluded from exports and ordinary logs. They remain in protected device credential storage.",
   },
   {
+    question: "What is SerpApi, and do I need it?",
+    answer:
+      "SerpApi is an optional, separate service that returns Google search results for sourced reports. It does not power recording, transcription, report writing, or Discuss. You need its own account and API key only if you select SerpApi in Research. AI-native search and No search do not require it.",
+  },
+  {
     question: "What can research send to my provider?",
     answer:
       "Only after you allow it, AI-native research can send relevant transcript context to your AI provider’s search tools. With SerpApi, one derived query goes to SerpApi and up to six selected snippets and links then go to your AI provider. Standard SerpApi searches may be retained for 31 days, and ZeroTrace is Enterprise-only.",

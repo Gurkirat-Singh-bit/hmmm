@@ -37,8 +37,6 @@ import type {
   TranscriptSnapshot,
 } from "../domain/contracts";
 import type { LiveTranscriptEvent } from "../domain/providers";
-import { findSpeechProvider } from "../onboarding/provider-config";
-import { deepgramModelSupportsStreaming } from "../provider/model-discovery";
 import type { CaptureHomeState, CapturePresentation } from "./state";
 
 const initialPresentation: CapturePresentation = {
@@ -437,15 +435,9 @@ export class CaptureController {
       return;
     const apiKey =
       (await this.secrets.readActive("speech"))?.secret.trim() || null;
-    const supportsStreaming = await deepgramModelSupportsStreaming(
-      findSpeechProvider("deepgram"),
-      apiKey ?? "",
-      active.preferences.speechProvider.model,
-    );
     const recordingState = active.session.getState();
     if (
       this.active !== active ||
-      !supportsStreaming ||
       !apiKey ||
       (recordingState !== "recording" && recordingState !== "paused")
     )

@@ -6,9 +6,11 @@
  */
 
 import {
+  ArrowSquareOutIcon as ArrowSquareOut,
   CheckIcon as Check,
   MagnifyingGlassIcon as MagnifyingGlass,
 } from "phosphor-react-native";
+import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
 import {
   ActivityIndicator,
@@ -22,7 +24,10 @@ import {
 import { SecretField } from "@/components/onboarding/OnboardingFields";
 import { SettingsSubpage } from "@/components/settings/SettingsSubpage";
 import { colors, onboardingFonts, radii } from "@/constants/theme";
-import { researchProviderDescription } from "@/features/provider/config";
+import {
+  researchProviderDescription,
+  SERPAPI_MANAGE_KEY_URL,
+} from "@/features/provider/config";
 import { useResearchSettings } from "@/features/settings/use-research-settings";
 
 /** Renders provider research availability, behavior, and explicit consent controls. */
@@ -74,6 +79,29 @@ export default function ResearchSettingsScreen() {
       </View>
       {external ? (
         <View style={styles.searchCredential}>
+          <Text style={styles.serpApiExplanation}>
+            SerpApi is a separate service that returns Google search results.
+            Hmmmidea uses it only for optional sourced reports, never for
+            transcription or Discuss. You can use AI-native search or keep
+            research off without a SerpApi account.
+          </Text>
+          <Pressable
+            accessibilityHint="Opens the official SerpApi account page"
+            accessibilityLabel="Create a SerpApi account or get an API key"
+            accessibilityRole="link"
+            onPress={() =>
+              void Linking.openURL(SERPAPI_MANAGE_KEY_URL).catch(
+                () => undefined,
+              )
+            }
+            style={({ pressed }) => [
+              styles.serpApiLink,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={styles.serpApiLinkText}>Get a SerpApi key</Text>
+            <ArrowSquareOut color={colors.inkInverse} size={18} weight="bold" />
+          </Pressable>
           <SecretField
             attempted={settings.enabled && !settings.searchKey.trim()}
             label="SERPAPI KEY"
@@ -365,6 +393,26 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: radii.large,
     backgroundColor: colors.surfaceMuted,
+  },
+  serpApiExplanation: {
+    color: colors.inkSecondary,
+    fontFamily: onboardingFonts.bodyRegular,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  serpApiLink: {
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 15,
+    borderRadius: radii.medium,
+    backgroundColor: colors.ink,
+  },
+  serpApiLinkText: {
+    color: colors.inkInverse,
+    fontFamily: onboardingFonts.bodySemiBold,
+    fontSize: 13,
   },
   retention: {
     color: colors.inkMuted,

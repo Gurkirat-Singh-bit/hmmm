@@ -40,6 +40,7 @@ const illustrations = [
   require("@/assets/Onboarding/Onboarding-1.png"),
   require("@/assets/Onboarding/Onboarding-2.png"),
   require("@/assets/Onboarding/Onboarding-3.png"),
+  require("@/assets/Onboarding/Onboarding-4.png"),
 ] as const;
 export function OnboardingStepContent({
   flow,
@@ -127,7 +128,44 @@ export function OnboardingStepContent({
       ) : null}
       {step === 1 ? <SpeechSetup flow={flow} /> : null}
       {step === 2 ? <AiSetup flow={flow} /> : null}
+      {step === 3 ? <SetupSummary flow={flow} /> : null}
     </Animated.View>
+  );
+}
+function SetupSummary({ flow }: { flow: Flow }) {
+  const speech = findSpeechProvider(flow.speechProvider);
+  const ai = findAiProvider(flow.aiProvider);
+  const research =
+    flow.researchConsent === "denied"
+      ? "Off"
+      : flow.researchSource.kind === "external"
+        ? "SerpApi · Google"
+        : `${ai.label} native search`;
+  return (
+    <View accessibilityLabel="Setup summary" style={styles.summary}>
+      <SummaryRow label="NAME" value={flow.name.trim()} />
+      <SummaryRow
+        label="TRANSCRIPTION"
+        value={`${speech.label} · ${flow.speechModel.trim()}`}
+      />
+      <SummaryRow
+        label="REPORTS & DISCUSS"
+        value={`${ai.label} · ${flow.aiModel.trim()}`}
+      />
+      <SummaryRow label="OPTIONAL RESEARCH" value={research} />
+      <Text style={styles.summaryNote}>
+        Your keys will be verified, then saved only in this device&apos;s secure
+        key store. You can change every choice later in Settings.
+      </Text>
+    </View>
+  );
+}
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.summaryRow}>
+      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text style={styles.summaryValue}>{value}</Text>
+    </View>
   );
 }
 function SpeechSetup({ flow }: { flow: Flow }) {
@@ -267,6 +305,10 @@ function getStepCopy(step: Flow["step"], name: string) {
       heading: `Shape ideas, ${name.trim() || "your way"}.`,
       body: "Choose an AI model and whether it may search the web.",
     },
+    {
+      heading: "Ready when you are.",
+      body: "Review your setup before Hmmmidea verifies each connection.",
+    },
   ][step];
 }
 
@@ -304,6 +346,41 @@ const styles = StyleSheet.create({
     backgroundColor: colors.darkSurface,
   },
   transferNote: {
+    color: colors.darkMuted,
+    fontFamily: onboardingFonts.bodyRegular,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  summary: {
+    gap: 0,
+    marginTop: 24,
+    overflow: "hidden",
+    borderRadius: radii.large,
+    backgroundColor: colors.darkSurface,
+  },
+  summaryRow: {
+    gap: 5,
+    minHeight: 70,
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.darkLine,
+  },
+  summaryLabel: {
+    color: colors.darkMuted,
+    fontFamily: onboardingFonts.bodyBold,
+    fontSize: 9,
+    letterSpacing: 1.1,
+  },
+  summaryValue: {
+    color: colors.inkInverse,
+    fontFamily: onboardingFonts.bodySemiBold,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  summaryNote: {
+    padding: 16,
     color: colors.darkMuted,
     fontFamily: onboardingFonts.bodyRegular,
     fontSize: 12,

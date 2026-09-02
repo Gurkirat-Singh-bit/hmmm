@@ -17,11 +17,8 @@ import {
 } from "../src/features/provider/config";
 mock.module("expo/fetch", () => ({ fetch: globalThis.fetch }));
 
-const {
-  filterModelCatalog,
-  parseDeepgramStreamingModelIds,
-  parseModelCatalog,
-} = await import("../src/features/provider/model-discovery");
+const { filterModelCatalog, parseModelCatalog } =
+  await import("../src/features/provider/model-discovery");
 const {
   DEFAULT_REPORT_SYSTEM_PROMPT,
   normalizeReportSystemPrompt,
@@ -118,23 +115,6 @@ describe("provider protocols", () => {
     expect(parseModelCatalog(payload, "openai", "speech")).toEqual([
       "whisper-1",
     ]);
-  });
-
-  test("enables live mode only from Deepgram streaming metadata", () => {
-    expect(
-      parseDeepgramStreamingModelIds({
-        stt: [
-          {
-            canonical_name: "nova-3",
-            name: "general",
-            uuid: "streaming-id",
-            streaming: true,
-          },
-          { canonical_name: "whisper", streaming: false },
-          { canonical_name: "unknown" },
-        ],
-      }),
-    ).toEqual(["nova-3", "general", "streaming-id"]);
   });
 
   test("searches model IDs using case-insensitive terms", () => {
