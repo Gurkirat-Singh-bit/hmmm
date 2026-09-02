@@ -1,50 +1,44 @@
-# Welcome to your Expo app 👋
+# Hmmmidea
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Hmmmidea is a local-first, voice-first Expo app for capturing ideas, transcribing them, and turning them into structured reports. Ideas and job state remain in SQLite, optional audio stays in app-owned storage, and provider credentials remain in Android SecureStore.
 
-## Get started
+## Requirements
 
-1. Install dependencies
+- Bun 1.4+
+- Android development build (recording and protected credentials are Android-first)
+- User-supplied speech and AI provider credentials
 
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Development
 
 ```bash
-npm run reset-project
+bun install
+bun run start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+Open Android directly with:
 
-## Learn more
+```bash
+bun run android
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+The app uses Expo Router routes under `src/app` and resolves `@/` from `src`.
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Validation
 
-## Join the community
+```bash
+bun run typecheck
+bun run lint
+bun test
+bun run docs:audit
+bunx expo-doctor
+```
 
-Join our community of developers creating universal apps.
+The JSDoc audit uses the installed TypeScript compiler API and does not require a separate documentation dependency.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Product boundaries
+
+See [Architecture](docs/ARCHITECTURE.md) for data and provider boundaries and [Design](docs/Design.md) for the visual source of truth.
+
+## License
+
+MIT

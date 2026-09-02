@@ -3,33 +3,45 @@
     "name": "hmmm",
     "slug": "hmmm",
     "version": "1.0.0",
+    "platforms": [
+      "android"
+    ],
     "orientation": "portrait",
-    "icon": "./assets/app-icon.png",
+    "icon": "./src/assets/app-icon.png",
     "scheme": "hmmm",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
     "android": {
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.POST_NOTIFICATIONS"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
-        "foregroundImage": "./assets/brand-mark.png"
+        "foregroundImage": "./src/assets/brand-mark.png"
       },
       "softwareKeyboardLayoutMode": "resize",
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "output": "static"
+      "predictiveBackGestureEnabled": false,
+      "package": "com.gurkiratsinghbit.hmmm"
     },
     "plugins": [
       "expo-router",
       "expo-secure-store",
       [
+        "@siteed/audio-studio",
+        {
+          "enablePhoneStateHandling": false,
+          "enableNotifications": false,
+          "enableBackgroundAudio": false,
+          "enableDeviceDetection": false
+        }
+      ],
+      "expo-notifications",
+      [
         "expo-splash-screen",
         {
-          "image": "./assets/brand-mark.png",
+          "image": "./src/assets/brand-mark.png",
           "imageWidth": 180,
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFF"
