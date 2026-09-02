@@ -22,6 +22,7 @@ import {
   PROVIDER_RESPONSE_LIMITS,
   PROVIDER_TIMEOUT_MS,
   SPEECH_PROVIDER_DESCRIPTORS,
+  transcriptionResponseFormat,
 } from "../config";
 import { extractGeminiText, isRecord, requireResponseText } from "../parsing";
 import {
@@ -92,8 +93,10 @@ async function transcribeOpenAiCompatible(
   const form = new FormData();
   form.append("file", new File(request.audio.uri));
   form.append("model", model);
-  form.append("response_format", "verbose_json");
-  form.append("timestamp_granularities[]", "segment");
+  const responseFormat = transcriptionResponseFormat(providerId, model);
+  form.append("response_format", responseFormat);
+  if (responseFormat === "verbose_json")
+    form.append("timestamp_granularities[]", "segment");
   if (request.languageTag)
     form.append("language", primaryLanguage(request.languageTag));
   const payload = await requestJson({

@@ -39,6 +39,16 @@ export default function OnboardingScreen() {
     flow.previous();
     scrollRef.current?.scrollTo({ animated: true, y: 0 });
   };
+  const finishSetup = () => {
+    if (!flow.stepComplete) {
+      void flow.finish();
+      requestAnimationFrame(() =>
+        scrollRef.current?.scrollToEnd({ animated: true }),
+      );
+      return;
+    }
+    void flow.finish();
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -91,9 +101,7 @@ export default function OnboardingScreen() {
           complete={flow.stepComplete}
           onBack={moveBack}
           onContinue={
-            flow.step === onboardingStepCount - 1
-              ? () => void flow.finish()
-              : moveForward
+            flow.step === onboardingStepCount - 1 ? finishSetup : moveForward
           }
           saving={flow.saving}
           step={flow.step}
@@ -141,6 +149,6 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: spacing.page,
     paddingTop: 13,
-    paddingBottom: 28,
+    paddingBottom: 48,
   },
 });

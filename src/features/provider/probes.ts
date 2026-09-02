@@ -105,60 +105,59 @@ export async function probeAiProvider(
   const { apiKey, model } = requireProviderContext(context, providerId);
   const base = providerBaseUrl(context, providerId);
   const requestId = `probe-ai-${startedAt}`;
-  if (providerId === "openrouter") {
-    await requestProbe({
-      providerId,
-      operation: "provider-configuration",
-      url: `${base}/chat/completions`,
-      init: {
-        method: "POST",
-        headers: requestHeaders(providerId, apiKey, requestId),
-        body: JSON.stringify({
-          model,
-          max_completion_tokens: 16,
-          messages: [{ role: "user", content: "Reply with OK." }],
-        }),
-      },
-      timeoutMs: PROVIDER_TIMEOUT_MS.probe,
-      attempts: 1,
-    });
-    return probeResult("ai", providerId, model, startedAt);
-  }
-  if (providerId === "groq") {
-    const payload = await requestJson({
-      providerId,
-      operation: "provider-configuration",
-      url: `${base}/models`,
-      init: { headers: requestHeaders(providerId, apiKey, requestId) },
-      timeoutMs: PROVIDER_TIMEOUT_MS.probe,
-      attempts: 1,
-    });
-    requireCatalogModel(payload, model, providerId, "AI");
-    return probeResult("ai", providerId, model, startedAt);
-  }
-  const custom = providerId === "custom";
-  const url = custom
-    ? `${base}/chat/completions`
-    : `${base}/models/${encodeURIComponent(model)}`;
+  const request = aiInferenceProbe(providerId, base, model);
   await requestProbe({
     providerId,
     operation: "provider-configuration",
-    url,
-    init: custom
-      ? {
-          method: "POST",
-          headers: requestHeaders(providerId, apiKey, requestId),
-          body: JSON.stringify({
-            model,
-            max_tokens: 1,
-            messages: [{ role: "user", content: "Reply OK." }],
-          }),
-        }
-      : { headers: requestHeaders(providerId, apiKey, requestId) },
+    url: request.url,
+    init: {
+      method: "POST",
+      headers: requestHeaders(providerId, apiKey, requestId),
+      body: JSON.stringify(request.body),
+    },
     timeoutMs: PROVIDER_TIMEOUT_MS.probe,
     attempts: 1,
   });
   return probeResult("ai", providerId, model, startedAt);
+}
+function aiInferenceProbe(
+  providerId: "openai" | "openrouter" | "groq" | "google" | "claude" | "custom",
+  base: string,
+  model: string,
+) {
+  if (providerId === "openai") {
+    return {
+      url: `${base}/responses`,
+      body: { model, input: "Reply with OK.", max_output_tokens: 16 },
+    };
+  }
+  if (providerId === "google") {
+    return {
+      url: `${base}/models/${encodeURIComponent(model)}:generateContent`,
+      body: {
+        contents: [{ role: "user", parts: [{ text: "Reply with OK." }] }],
+        generationConfig: { maxOutputTokens: 16 },
+      },
+    };
+  }
+  if (providerId === "claude") {
+    return {
+      url: `${base}/messages`,
+      body: {
+        model,
+        max_tokens: 16,
+        messages: [{ role: "user", content: "Reply with OK." }],
+      },
+    };
+  }
+  return {
+    url: `${base}/chat/completions`,
+    body: {
+      model,
+      max_tokens: 16,
+      messages: [{ role: "user", content: "Reply with OK." }],
+    },
+  };
 }
 export function probeSelectedProviders(
   input: Readonly<{ speech: ProviderContext; ai: ProviderContext }>,

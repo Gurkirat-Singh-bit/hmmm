@@ -13,6 +13,7 @@ import {
   researchProviderDescription,
   SYSTEM_PROMPT_LIMITS,
   supportsProviderResearch,
+  transcriptionResponseFormat,
 } from "../src/features/provider/config";
 mock.module("expo/fetch", () => ({ fetch: globalThis.fetch }));
 
@@ -27,7 +28,6 @@ const { normalizeCitations, parseGeneratedReport, safeSourceUrl } =
   await import("../src/features/provider/parsing");
 const { normalizeCustomEndpoint, providerBaseUrl, providerHeaders } =
   await import("../src/features/provider/transport");
-
 describe("provider protocols", () => {
   test("selects supported capabilities", () => {
     expect(isSpeechProviderId("deepgram")).toBe(true);
@@ -56,6 +56,19 @@ describe("provider protocols", () => {
     expect(providerHeaders("openai", "secret").Authorization).toBe(
       "Bearer secret",
     );
+  });
+
+  test("uses only transcription response formats supported by each API", () => {
+    expect(transcriptionResponseFormat("openai", "gpt-4o-transcribe")).toBe(
+      "json",
+    );
+    expect(transcriptionResponseFormat("openai", "whisper-1")).toBe(
+      "verbose_json",
+    );
+    expect(transcriptionResponseFormat("groq", "whisper-large-v3-turbo")).toBe(
+      "verbose_json",
+    );
+    expect(transcriptionResponseFormat("custom", "local-whisper")).toBe("json");
   });
 
   test("accepts only credential-free HTTPS custom URLs", () => {

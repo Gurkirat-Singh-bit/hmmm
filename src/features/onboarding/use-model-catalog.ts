@@ -23,7 +23,10 @@ export function useModelCatalog(
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const requestId = useRef(0);
-  const canRefresh = Boolean(provider.modelsUrl);
+  const needsKey = provider.authentication !== "optional-bearer";
+  const canRefresh = Boolean(
+    provider.modelsUrl && (!needsKey || apiKey.trim()),
+  );
 
   const load = useCallback(
     async (refresh = false) => {
@@ -34,12 +37,9 @@ export function useModelCatalog(
         setLoading(false);
         return;
       }
-      const needsKey = provider.authentication !== "optional-bearer";
       if (needsKey && !apiKey.trim()) {
         setModels(cachedModels(kind, provider));
-        setError(
-          `Add your ${provider.label} API key to search its full model catalog.`,
-        );
+        setError(null);
         setLoading(false);
         return;
       }
@@ -69,20 +69,15 @@ export function useModelCatalog(
         if (currentRequest === requestId.current) setLoading(false);
       }
     },
-    [apiKey, endpoint, kind, provider],
+    [apiKey, endpoint, kind, needsKey, provider],
   );
 
   useEffect(() => {
     setModels(cachedModels(kind, provider));
     setLoading(false);
-    const needsKey = provider.authentication !== "optional-bearer";
-    const canLoad = canRefresh && (!needsKey || Boolean(apiKey.trim()));
+    const canLoad = canRefresh;
     if (!canLoad) {
-      setError(
-        canRefresh && needsKey && !apiKey.trim()
-          ? `Add your ${provider.label} API key to search its full model catalog.`
-          : null,
-      );
+      setError(null);
       requestId.current += 1;
       return;
     }

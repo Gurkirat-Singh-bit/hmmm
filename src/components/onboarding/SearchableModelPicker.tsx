@@ -10,6 +10,7 @@ import {
   CaretDownIcon as CaretDown,
   CheckIcon as Check,
   MagnifyingGlassIcon as MagnifyingGlass,
+  WarningCircleIcon as WarningCircle,
   XIcon as X,
 } from "phosphor-react-native";
 import { useMemo, useState } from "react";
@@ -126,20 +127,21 @@ export function SearchableModelPicker({
             </Text>
             <Text
               numberOfLines={2}
-              style={[
-                styles.hint,
-                light && styles.lightMutedText,
-                error && styles.errorHint,
-              ]}
+              style={[styles.hint, light && styles.lightMutedText]}
             >
-              {error ??
-                (loading
-                  ? "Loading current models…"
-                  : `${options.length} models available · Tap to search`)}
+              {loading
+                ? "Loading current models…"
+                : `${options.length} models available · Tap to search`}
             </Text>
           </View>
           <CaretDown color={colors.darkMuted} size={18} weight="bold" />
         </Pressable>
+        {error ? (
+          <View accessibilityLiveRegion="polite" style={styles.catalogError}>
+            <WarningCircle color={colors.danger} size={15} weight="fill" />
+            <Text style={styles.catalogErrorText}>{error}</Text>
+          </View>
+        ) : null}
       </View>
 
       <Modal
@@ -311,7 +313,18 @@ const styles = StyleSheet.create({
     fontSize: 10,
   },
   pressed: { opacity: 0.7 },
-  errorHint: { color: colors.danger },
+  catalogError: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 6,
+  },
+  catalogErrorText: {
+    flex: 1,
+    color: colors.danger,
+    fontFamily: onboardingFonts.bodyRegular,
+    fontSize: 10,
+    lineHeight: 15,
+  },
   modal: { flex: 1, backgroundColor: colors.canvas },
   header: {
     flexDirection: "row",

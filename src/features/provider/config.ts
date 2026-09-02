@@ -189,3 +189,14 @@ export function isSpeechProviderId(value: string): value is SpeechProviderId {
 export function isAiProviderId(value: string): value is AiProviderId {
   return value in AI_PROVIDER_DESCRIPTORS;
 }
+
+/** Returns only response formats supported by the selected transcription API. */
+export function transcriptionResponseFormat(
+  providerId: "openai" | "groq" | "custom",
+  model: string,
+) {
+  return providerId === "groq" ||
+    (providerId === "openai" && model === "whisper-1")
+    ? "verbose_json"
+    : "json";
+}
