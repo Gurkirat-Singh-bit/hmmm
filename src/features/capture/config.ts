@@ -34,6 +34,7 @@ export const AUDIO_DIRECTORIES = {
 export const LIVE_TRANSCRIPTION = {
   maxPendingChunks: 8,
   reconnectDelayMs: 750,
+  reconnectMaxDelayMs: 8_000,
   openTimeoutMs: 5_000,
   sendTimeoutMs: 3_000,
   finishDrainTimeoutMs: 1_000,

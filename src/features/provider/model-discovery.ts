@@ -16,6 +16,7 @@ export type CatalogKind = "speech" | "ai";
 
 const memoryCache = new Map<string, readonly string[]>();
 const activeRequests = new Map<string, Promise<readonly string[]>>();
+let deepgramStreamingModels: ReadonlySet<string> | null = null;
 export function cachedModels(kind: CatalogKind, provider: ProviderDefinition) {
   return memoryCache.get(cacheKey(kind, provider.id)) ?? provider.starterModels;
 }
@@ -61,6 +62,22 @@ export function loadModelCatalog(
   activeRequests.set(key, request);
   return request;
 }
+
+/** Confirms live support from Deepgram metadata instead of guessing from the model name. */
+export async function deepgramModelSupportsStreaming(
+  provider: ProviderDefinition,
+  apiKey: string,
+  model: string,
+) {
+  if (provider.id !== "deepgram" || !apiKey.trim() || !model.trim())
+    return false;
+  try {
+    await loadModelCatalog("speech", provider, apiKey, "");
+    return deepgramStreamingModels?.has(model.trim()) ?? false;
+  } catch {
+    return false;
+  }
+}
 async function requestCatalog(
   kind: CatalogKind,
   provider: ProviderDefinition,
@@ -89,14 +106,19 @@ async function requestCatalog(
     }
     if (!response.ok)
       throw new Error(`Could not sync the model catalog (${response.status}).`);
-    const models = parseModelCatalog(
-      await readJsonResponse(response, provider.id, "provider-configuration"),
+    const payload = await readJsonResponse(
+      response,
       provider.id,
-      kind,
+      "provider-configuration",
     );
+    const models = parseModelCatalog(payload, provider.id, kind);
     if (!models.length)
       throw new Error(
         "No compatible models were returned. You can still enter an exact model ID.",
+      );
+    if (provider.id === "deepgram" && kind === "speech")
+      deepgramStreamingModels = new Set(
+        parseDeepgramStreamingModelIds(payload),
       );
     return models;
   } catch (reason) {
@@ -122,6 +144,24 @@ async function requestCatalog(
   } finally {
     clearTimeout(timeout);
   }
+}
+
+/** Returns every exact identifier for Deepgram STT entries marked streaming-capable. */
+export function parseDeepgramStreamingModelIds(payload: unknown) {
+  if (!isRecord(payload)) return [];
+  return [
+    ...new Set(
+      boundedCatalogItems(payload.stt).flatMap((item) => {
+        if (!isRecord(item) || item.streaming !== true) return [];
+        return [item.canonical_name, item.name, item.uuid].filter(
+          (value): value is string =>
+            typeof value === "string" &&
+            value.length > 0 &&
+            value.length <= PROVIDER_RESPONSE_LIMITS.modelIdCharacters,
+        );
+      }),
+    ),
+  ];
 }
 function resolveModelsUrl(provider: ProviderDefinition) {
   if (provider.id === "custom") return null;

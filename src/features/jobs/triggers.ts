@@ -11,7 +11,6 @@ import type {
   DataGeneration,
   ReportField,
   ReportRevision,
-  TranscriptSnapshot,
 } from "../domain/contracts";
 import type { JobEnqueueInput, ReportJobPayload } from "./contracts";
 
@@ -73,31 +72,12 @@ export function initialCaptureJobs(
     captureId: CaptureId;
     generation: DataGeneration;
     audio: AudioAsset;
-    transcript: TranscriptSnapshot | null;
     transcriptionRequestId: string;
-    reportRequestId: string;
-    researchEnabled: boolean;
+    expectedTranscriptRevision: number;
     runAfter: string;
     maxAttempts: number;
   }>,
 ): readonly JobEnqueueInput[] {
-  if (input.transcript?.phase === "final") {
-    return [
-      reportJob({
-        captureId: input.captureId,
-        generation: input.generation,
-        revision: 1,
-        requestId: input.reportRequestId,
-        transcriptRevision: input.transcript.revision,
-        expectedActiveRevision: null,
-        researchEnabled: input.researchEnabled,
-        reason: "initial-capture",
-        explicitlyReplacedUserFields: [],
-        runAfter: input.runAfter,
-        maxAttempts: input.maxAttempts,
-      }),
-    ];
-  }
   return [
     transcriptionJob({
       captureId: input.captureId,
@@ -105,7 +85,7 @@ export function initialCaptureJobs(
       revision: 1,
       requestId: input.transcriptionRequestId,
       audio: input.audio,
-      expectedTranscriptRevision: input.transcript?.revision ?? 0,
+      expectedTranscriptRevision: input.expectedTranscriptRevision,
       runAfter: input.runAfter,
       maxAttempts: input.maxAttempts,
     }),

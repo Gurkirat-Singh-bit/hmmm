@@ -36,10 +36,9 @@ import type {
   RecordingSessionPort,
   TranscriptSnapshot,
 } from "../domain/contracts";
-import type {
-  LiveTranscriptEvent,
-  ProviderRegistryPort,
-} from "../domain/providers";
+import type { LiveTranscriptEvent } from "../domain/providers";
+import { findSpeechProvider } from "../onboarding/provider-config";
+import { deepgramModelSupportsStreaming } from "../provider/model-discovery";
 import type { CaptureHomeState, CapturePresentation } from "./state";
 
 const initialPresentation: CapturePresentation = {
@@ -144,7 +143,7 @@ export class CaptureController {
         capture: {
           ...initialPresentation,
           phase: "starting",
-          transcriptMode: liveMode(configured.preferences, this.providers),
+          transcriptMode: "after-saving",
         },
       });
       let session: RecordingSessionPort;
@@ -211,13 +210,10 @@ export class CaptureController {
         capture: {
           ...initialPresentation,
           phase: "recording",
-          transcriptMode:
-            session.supportsAudioChunks === false
-              ? "after-saving"
-              : liveMode(configured.preferences, this.providers),
+          transcriptMode: "after-saving",
         },
       });
-      this.openLiveTranscript(active);
+      void this.openLiveTranscript(active);
     });
   }
   async pause() {
@@ -263,11 +259,10 @@ export class CaptureController {
       try {
         const audio = await active.session.finish();
         const liveFinal = await active.live?.finish();
-        const transcript = finalLiveTranscript(
+        const transcript = provisionalLiveTranscript(
           active,
           liveFinal?.text ?? "",
           liveFinal?.languageTag ?? null,
-          liveFinal?.segments ?? [],
         );
 
         // Persist the native URI before any file move. A crash here still leaves recoverable audio.
@@ -306,10 +301,9 @@ export class CaptureController {
             captureId: active.captureId,
             generation: active.generation,
             audio: retainedAudio,
-            transcript: transcript ?? active.draft.transcript,
             transcriptionRequestId: `${active.captureId}:transcription`,
-            reportRequestId: `${active.captureId}:report`,
-            researchEnabled: active.preferences.researchEnabled,
+            expectedTranscriptRevision:
+              (transcript ?? active.draft.transcript)?.revision ?? 0,
             runAfter: committedAt,
             maxAttempts: JOB_RUNTIME.maxAttempts,
           }),
@@ -430,8 +424,9 @@ export class CaptureController {
     }
     return { preferences };
   }
-  private openLiveTranscript(active: ActiveRecording) {
+  private async openLiveTranscript(active: ActiveRecording) {
     if (active.session.supportsAudioChunks === false) return;
+    if (active.preferences.speechProvider.providerId !== "deepgram") return;
     const provider = this.providers.getSpeech(
       active.preferences.speechProvider.providerId,
     );
@@ -440,12 +435,26 @@ export class CaptureController {
       !provider.openLiveSession
     )
       return;
+    const apiKey =
+      (await this.secrets.readActive("speech"))?.secret.trim() || null;
+    const supportsStreaming = await deepgramModelSupportsStreaming(
+      findSpeechProvider("deepgram"),
+      apiKey ?? "",
+      active.preferences.speechProvider.model,
+    );
+    const recordingState = active.session.getState();
+    if (
+      this.active !== active ||
+      !supportsStreaming ||
+      !apiKey ||
+      (recordingState !== "recording" && recordingState !== "paused")
+    )
+      return;
     const live = new RecordingLiveTranscription(active.session, async () =>
       provider.openLiveSession!(
         {
           selection: active.preferences.speechProvider,
-          apiKey:
-            (await this.secrets.readActive("speech"))?.secret.trim() || null,
+          apiKey,
         },
         {
           requestId: `${active.captureId}:live`,
@@ -456,6 +465,13 @@ export class CaptureController {
     );
     active.live = live;
     live.subscribe((event) => this.liveEvent(active, event));
+    this.publish({
+      capture: {
+        ...this.state.capture,
+        transcriptMode: "live",
+        message: null,
+      },
+    });
     live.start();
   }
   private liveEvent(active: ActiveRecording, event: LiveTranscriptEvent) {
@@ -464,16 +480,12 @@ export class CaptureController {
       this.publish({
         capture: {
           ...this.state.capture,
-          message:
-            "Live text paused. Your saved audio will be transcribed after you finish.",
+          message: "Reconnecting live text. Your recording is still safe.",
         },
       });
       return;
     }
-    const text =
-      event.phase === "final"
-        ? joinText(active.finalLiveParts, event.text)
-        : joinText(active.finalLiveParts, event.text);
+    const text = joinText(active.finalLiveParts, event.text);
     if (event.phase === "final") active.finalLiveParts.push(event.text);
     const transcript = provisionalTranscript(active, text);
     this.persistLater(active, { transcript });
@@ -688,17 +700,6 @@ function safeEndpoint(value: string | null) {
     return false;
   }
 }
-function liveMode(
-  preferences: AppPreferencesRecord | null,
-  providers: ProviderRegistryPort,
-) {
-  const provider = preferences
-    ? providers.getSpeech(preferences.speechProvider.providerId)
-    : null;
-  return provider?.descriptor.capabilities["speech.streaming-transcription"]
-    ? "live"
-    : "after-saving";
-}
 function joinText(parts: readonly string[], next: string) {
   return [...parts, next].join(" ").replace(/\s+/gu, " ").trim();
 }
@@ -718,20 +719,20 @@ function provisionalTranscript(
     createdAt: new Date().toISOString(),
   };
 }
-function finalLiveTranscript(
+function provisionalLiveTranscript(
   active: ActiveRecording,
   text: string,
   languageTag: string | null,
-  segments: TranscriptSnapshot["segments"],
 ): TranscriptSnapshot | null {
   if (!text.trim()) return null;
   return {
     requestId: `${active.captureId}:live:final`,
-    phase: "final",
+    phase: "provisional",
     revision: (active.draft.transcript?.revision ?? 0) + 1,
     text: text.trim(),
     languageTag,
-    segments,
+    // The uploaded recording supplies authoritative timestamps after saving.
+    segments: [],
     providerId: active.preferences.speechProvider.providerId,
     createdAt: new Date().toISOString(),
   };

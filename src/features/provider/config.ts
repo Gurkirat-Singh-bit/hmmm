@@ -37,6 +37,7 @@ export const DEEPGRAM_LIVE_AUDIO = {
   encoding: "linear16",
   sampleRateHz: 16_000,
   channelCount: 1,
+  keepAliveIntervalMs: 4_000,
   maxBufferedAmount: 256_000,
   bufferDrainTimeoutMs: 2_500,
   bufferPollMs: 25,

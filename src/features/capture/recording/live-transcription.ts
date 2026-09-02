@@ -34,6 +34,7 @@ export class RecordingLiveTranscription {
   private live: LiveTranscriptionSessionPort | null = null;
   private opening: Promise<LiveTranscriptionSessionPort | null> | null = null;
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectAttempts = 0;
   private draining = false;
   private active = false;
   private recording = false;
@@ -42,6 +43,7 @@ export class RecordingLiveTranscription {
   private outputSequence = 0;
   private lastProvisional = "";
   private lastFinal = "";
+  private finalParts: string[] = [];
   private closedPublished = false;
   private finalResult: Promise<FinalTranscript | null> | null = null;
   constructor(
@@ -94,7 +96,16 @@ export class RecordingLiveTranscription {
       return null;
     }
     try {
-      return await live.finish();
+      const result = await live.finish();
+      const finalized = this.finalParts.join(" ").replace(/\s+/gu, " ").trim();
+      const tail = result.text.replace(/\s+/gu, " ").trim();
+      return {
+        ...result,
+        text:
+          !tail || finalized.endsWith(tail)
+            ? finalized
+            : `${finalized} ${tail}`.trim(),
+      };
     } catch {
       await this.cancelQuietly(live);
       return null;
@@ -128,7 +139,6 @@ export class RecordingLiveTranscription {
     this.recording = event.state === "recording";
     if (event.state === "paused") {
       this.pending.length = 0;
-      void this.closeLiveSession();
     } else if (event.state === "recording") {
       void this.ensureLiveSession().then(() => this.drain());
     } else if (event.state === "stopping") {
@@ -239,7 +249,9 @@ export class RecordingLiveTranscription {
     else {
       this.lastProvisional = "";
       this.lastFinal = text;
+      this.finalParts.push(text);
     }
+    this.reconnectAttempts = 0;
 
     const ordered: LiveTranscriptEvent = {
       type: "transcript",
@@ -277,20 +289,19 @@ export class RecordingLiveTranscription {
   }
   private scheduleReconnect(): void {
     if (!this.active || !this.recording || this.reconnectTimer) return;
+    const delay = Math.min(
+      LIVE_TRANSCRIPTION.reconnectMaxDelayMs,
+      LIVE_TRANSCRIPTION.reconnectDelayMs * 2 ** this.reconnectAttempts,
+    );
+    this.reconnectAttempts += 1;
     this.reconnectTimer = setTimeout(() => {
       this.reconnectTimer = null;
       void this.ensureLiveSession().then(() => this.drain());
-    }, LIVE_TRANSCRIPTION.reconnectDelayMs);
+    }, delay);
   }
   private stopReconnect(): void {
     if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
     this.reconnectTimer = null;
-  }
-  private async closeLiveSession(): Promise<void> {
-    this.stopReconnect();
-    const live = this.live;
-    this.detachLive();
-    if (live) await this.cancelQuietly(live);
   }
   private dropFailedLive(live: LiveTranscriptionSessionPort): void {
     if (this.live === live) this.detachLive();

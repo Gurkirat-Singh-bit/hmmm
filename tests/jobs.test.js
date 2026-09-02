@@ -37,36 +37,23 @@ describe("durable capture job planning", () => {
     const jobs = initialCaptureJobs({
       ...common,
       audio,
-      transcript: null,
       transcriptionRequestId: "transcribe-1",
-      reportRequestId: "report-1",
-      researchEnabled: true,
+      expectedTranscriptRevision: 0,
     });
     expect(jobs).toHaveLength(1);
     expect(jobs[0].payload.kind).toBe("transcribe-capture");
   });
 
-  test("queues report generation for a final live transcript", () => {
+  test("still queues saved-audio transcription after live text", () => {
     const jobs = initialCaptureJobs({
       ...common,
       audio,
-      transcript: {
-        requestId: "live-1",
-        phase: "final",
-        revision: 2,
-        text: "Captured words",
-        languageTag: "en",
-        segments: [],
-        providerId: "deepgram",
-        createdAt: new Date(0).toISOString(),
-      },
       transcriptionRequestId: "transcribe-1",
-      reportRequestId: "report-1",
-      researchEnabled: false,
+      expectedTranscriptRevision: 2,
     });
     expect(jobs).toHaveLength(1);
-    expect(jobs[0].payload.kind).toBe("generate-report");
-    expect(jobs[0].payload.transcriptRevision).toBe(2);
+    expect(jobs[0].payload.kind).toBe("transcribe-capture");
+    expect(jobs[0].payload.expectedTranscriptRevision).toBe(2);
   });
 
   test("keeps retry request identity stable", () => {

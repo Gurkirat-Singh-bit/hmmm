@@ -234,6 +234,8 @@ class DeepgramLiveSession implements LiveTranscriptionSessionPort {
   private resolveFinish: ((value: FinalTranscript) => void) | null = null;
   private rejectFinish: ((reason: unknown) => void) | null = null;
   private finishTimeout: ReturnType<typeof setTimeout> | null = null;
+  private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
+  private lastOutboundAt = Date.now();
   private closed = false;
   constructor(
     private readonly socket: WebSocket,
@@ -243,6 +245,10 @@ class DeepgramLiveSession implements LiveTranscriptionSessionPort {
     socket.onerror = () =>
       this.fail("The live transcription connection failed.");
     socket.onclose = (event) => this.onClose(event);
+    this.keepAliveTimer = setInterval(
+      () => this.keepAlive(),
+      DEEPGRAM_LIVE_AUDIO.keepAliveIntervalMs,
+    );
   }
   subscribe(listener: (event: LiveTranscriptEvent) => void) {
     this.listeners.add(listener);
@@ -271,6 +277,7 @@ class DeepgramLiveSession implements LiveTranscriptionSessionPort {
     }
     this.lastAudioSequence = sequence;
     this.socket.send(chunk);
+    this.lastOutboundAt = Date.now();
   }
   finish() {
     if (this.finishing) return this.finishing;
@@ -285,6 +292,7 @@ class DeepgramLiveSession implements LiveTranscriptionSessionPort {
         ),
       );
     }
+    this.stopKeepAlive();
     this.finishing = new Promise<FinalTranscript>((resolve, reject) => {
       this.resolveFinish = resolve;
       this.rejectFinish = reject;
@@ -299,6 +307,7 @@ class DeepgramLiveSession implements LiveTranscriptionSessionPort {
   async cancel() {
     if (this.closed) return;
     this.closed = true;
+    this.stopKeepAlive();
     if (this.socket.readyState === WebSocket.OPEN)
       this.socket.send(JSON.stringify({ type: "CloseStream" }));
     this.socket.close();
@@ -332,6 +341,10 @@ class DeepgramLiveSession implements LiveTranscriptionSessionPort {
       payload = JSON.parse(data);
     } catch {
       this.fail("The live transcription provider returned unreadable data.");
+      return;
+    }
+    if (isRecord(payload) && payload.type === "Error") {
+      this.fail("Deepgram rejected the live transcription session.");
       return;
     }
     if (
@@ -428,6 +441,7 @@ class DeepgramLiveSession implements LiveTranscriptionSessionPort {
   private onClose(event: { code?: number }) {
     if (this.closed) return;
     this.closed = true;
+    this.stopKeepAlive();
     if (this.finishing && event.code !== 1_000) {
       this.rejectFinish?.(
         providerError(
@@ -465,6 +479,7 @@ class DeepgramLiveSession implements LiveTranscriptionSessionPort {
   private failWith(error: Error) {
     if (this.closed) return;
     this.closed = true;
+    this.stopKeepAlive();
     this.rejectFinish?.(error);
     this.clearFinish();
     this.socket.close();
@@ -478,6 +493,20 @@ class DeepgramLiveSession implements LiveTranscriptionSessionPort {
     this.finishTimeout = null;
     this.resolveFinish = null;
     this.rejectFinish = null;
+  }
+  private keepAlive() {
+    if (
+      this.closed ||
+      this.socket.readyState !== WebSocket.OPEN ||
+      Date.now() - this.lastOutboundAt < DEEPGRAM_LIVE_AUDIO.keepAliveIntervalMs
+    )
+      return;
+    this.socket.send(JSON.stringify({ type: "KeepAlive" }));
+    this.lastOutboundAt = Date.now();
+  }
+  private stopKeepAlive() {
+    if (this.keepAliveTimer) clearInterval(this.keepAliveTimer);
+    this.keepAliveTimer = null;
   }
 }
 function parseDeepgramTranscript(

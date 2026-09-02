@@ -38,6 +38,7 @@ function fakeLiveSession(label) {
   const listeners = new Set();
   return {
     label,
+    finalText: label,
     chunks: [],
     cancelled: false,
     finished: false,
@@ -50,16 +51,19 @@ function fakeLiveSession(label) {
     },
     async finish() {
       this.finished = true;
-      return { text: label, languageTag: null, segments: [] };
+      return { text: this.finalText, languageTag: null, segments: [] };
     },
     async cancel() {
       this.cancelled = true;
+    },
+    emit(event) {
+      for (const listener of listeners) listener(event);
     },
   };
 }
 
 describe("recording live transcription", () => {
-  test("closes on pause and opens a fresh stream after resume", async () => {
+  test("keeps the live stream through pause and resumes audio delivery", async () => {
     const recording = fakeRecording();
     const sessions = [];
     const transcription = new RecordingLiveTranscription(
@@ -85,7 +89,7 @@ describe("recording live transcription", () => {
 
     recording.emit({ type: "state", state: "paused" });
     await tick();
-    expect(sessions[0].cancelled).toBe(true);
+    expect(sessions[0].cancelled).toBe(false);
 
     recording.emit({ type: "state", state: "recording" });
     await tick();
@@ -96,14 +100,51 @@ describe("recording live transcription", () => {
       mimeType: "audio/pcm",
     });
     await tick();
-    expect(sessions).toHaveLength(2);
-    expect(sessions[1].chunks).toEqual([{ data: [3], sequence: 2 }]);
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].chunks).toEqual([
+      { data: [1, 2], sequence: 1 },
+      { data: [3], sequence: 2 },
+    ]);
 
     await expect(transcription.finish()).resolves.toEqual({
-      text: "session-2",
+      text: "session-1",
       languageTag: null,
       segments: [],
     });
-    expect(sessions[1].finished).toBe(true);
+    expect(sessions[0].finished).toBe(true);
+  });
+
+  test("returns cumulative finalized phrases without duplicating the final response", async () => {
+    const recording = fakeRecording();
+    let session;
+    const transcription = new RecordingLiveTranscription(
+      recording,
+      async () => {
+        session = fakeLiveSession("unused");
+        session.finalText = "first phrase second phrase";
+        return session;
+      },
+    );
+
+    transcription.start();
+    await tick();
+    session.emit({
+      type: "transcript",
+      phase: "final",
+      text: "first phrase",
+      sequence: 1,
+    });
+    session.emit({
+      type: "transcript",
+      phase: "final",
+      text: "second phrase",
+      sequence: 2,
+    });
+
+    await expect(transcription.finish()).resolves.toEqual({
+      text: "first phrase second phrase",
+      languageTag: null,
+      segments: [],
+    });
   });
 });

@@ -60,6 +60,11 @@ export function VoiceCapturePanel({
         >
           {captureCopy(capture)}
         </Text>
+        {capture.transcript && capture.message ? (
+          <Text accessibilityLiveRegion="polite" style={styles.liveStatus}>
+            {capture.message}
+          </Text>
+        ) : null}
       </View>
       <View style={styles.controls}>
         <CaptureControl
@@ -104,8 +109,9 @@ function primaryAction(capture: CapturePresentation) {
   };
 }
 function captureCopy(capture: CapturePresentation) {
-  if (capture.message) return capture.message;
+  if (capture.phase === "failure" && capture.message) return capture.message;
   if (capture.transcript) return capture.transcript;
+  if (capture.message) return capture.message;
   if (capture.phase === "idle") return "Tap Record and start speaking.";
   if (capture.phase === "permission")
     return "Allow microphone access to capture with your voice.";
@@ -196,6 +202,15 @@ const styles = StyleSheet.create({
     fontFamily: onboardingFonts.displaySemiBold,
     fontSize: 16,
     lineHeight: 20,
+    textAlign: "center",
+  },
+  liveStatus: {
+    maxWidth: 280,
+    marginTop: 7,
+    color: colors.inkMuted,
+    fontFamily: onboardingFonts.bodySemiBold,
+    fontSize: 10,
+    lineHeight: 14,
     textAlign: "center",
   },
   controls: {
