@@ -1,0 +1,109 @@
+/**
+ * @file live-transcription.test.js
+ * @description Verifies live transcription closes on pause and opens a fresh stream on resume.
+ * @author Gurkirat Singh
+ * @license MIT
+ */
+
+import { describe, expect, test } from "bun:test";
+
+import { RecordingLiveTranscription } from "../src/features/capture/recording/live-transcription";
+
+const tick = () => new Promise((resolve) => setTimeout(resolve, 0));
+
+function fakeRecording() {
+  let state = "recording";
+  const listeners = new Set();
+  return {
+    id: "draft-1",
+    getState: () => state,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    async pause() {},
+    async resume() {},
+    async finish() {
+      throw new Error("unused");
+    },
+    async cancel() {},
+    emit(event) {
+      if (event.type === "state") state = event.state;
+      for (const listener of listeners) listener(event);
+    },
+  };
+}
+
+function fakeLiveSession(label) {
+  const listeners = new Set();
+  return {
+    label,
+    chunks: [],
+    cancelled: false,
+    finished: false,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    async sendAudio(data, sequence) {
+      this.chunks.push({ data: [...data], sequence });
+    },
+    async finish() {
+      this.finished = true;
+      return { text: label, languageTag: null, segments: [] };
+    },
+    async cancel() {
+      this.cancelled = true;
+    },
+  };
+}
+
+describe("recording live transcription", () => {
+  test("closes on pause and opens a fresh stream after resume", async () => {
+    const recording = fakeRecording();
+    const sessions = [];
+    const transcription = new RecordingLiveTranscription(
+      recording,
+      async () => {
+        const session = fakeLiveSession(`session-${sessions.length + 1}`);
+        sessions.push(session);
+        return session;
+      },
+    );
+
+    transcription.start();
+    await tick();
+    recording.emit({
+      type: "audio-chunk",
+      data: new Uint8Array([1, 2]),
+      sequence: 1,
+      mimeType: "audio/pcm",
+    });
+    await tick();
+    expect(sessions).toHaveLength(1);
+    expect(sessions[0].chunks).toEqual([{ data: [1, 2], sequence: 1 }]);
+
+    recording.emit({ type: "state", state: "paused" });
+    await tick();
+    expect(sessions[0].cancelled).toBe(true);
+
+    recording.emit({ type: "state", state: "recording" });
+    await tick();
+    recording.emit({
+      type: "audio-chunk",
+      data: new Uint8Array([3]),
+      sequence: 2,
+      mimeType: "audio/pcm",
+    });
+    await tick();
+    expect(sessions).toHaveLength(2);
+    expect(sessions[1].chunks).toEqual([{ data: [3], sequence: 2 }]);
+
+    await expect(transcription.finish()).resolves.toEqual({
+      text: "session-2",
+      languageTag: null,
+      segments: [],
+    });
+    expect(sessions[1].finished).toBe(true);
+  });
+});
