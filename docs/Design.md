@@ -291,11 +291,7 @@ Charts should feel like part of the interface rather than analytics dashboards.
 
 Use simple rounded line icons.
 
-Recommended libraries:
-
-* Lucide
-* Phosphor
-* platform-native equivalents
+This project deliberately standardizes on **Phosphor** (`phosphor-react-native`). Do not add React Icons, Lucide, or other icon libraries.
 
 Use consistent stroke weight throughout the application.
 

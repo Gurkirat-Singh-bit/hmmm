@@ -1,0 +1,64 @@
+name: Release Android APK
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install dependencies
+        run: bun ci
+
+      - name: Validate app
+        run: |
+          bun run typecheck
+          bun run lint
+          bun test
+          bun run format:check
+          bun run docs:audit
+
+      - name: Generate Android project
+        run: bunx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: android
+        run: ./gradlew assembleRelease
+
+      - name: Rename APK with tag
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk \
+             "android/app/build/outputs/apk/release/hmmm-${{ github.ref_name }}.apk"
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            Automated release built from tag `${{ github.ref_name }}`.
+
+            See the attached `hmmm-${{ github.ref_name }}.apk` asset below to download and install.
+          files: android/app/build/outputs/apk/release/hmmm-${{ github.ref_name }}.apk

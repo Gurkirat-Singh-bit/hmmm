@@ -295,21 +295,23 @@ Requires network access:
 
 ## 10. Source organization
 
-Grow the current repository into feature-oriented boundaries while retaining Expo Router conventions:
+The repository uses feature-oriented boundaries under `src/` while retaining Expo Router conventions:
 
 ```text
-app/                  route composition and navigation layouts
-components/           shared presentational UI and navigation pieces
-features/
-  captures/           capture use cases, domain types, repositories
-  recording/          recording session and audio adapter
-  jobs/               durable local job runner
-  providers/          speech and AI adapters/configuration
-  discussion/         thread use cases
-  settings/           typed preferences and setup logic
-  export/             PDF/JSON/native sharing
-constants/            stable product and design constants
-docs/                 product, architecture, and design decisions
+src/
+  app/                  route composition and navigation layouts
+  components/           shared presentational UI and navigation pieces
+  features/
+    captures/           capture use cases, domain types, repositories
+    recording/          recording session and audio adapter
+    jobs/               durable local job runner
+    providers/          speech and AI adapters/configuration
+    discussion/         thread use cases
+    settings/           typed preferences and setup logic
+    export/             PDF/JSON/native sharing
+  constants/            stable product and design constants
+  assets/               brand marks, icons, onboarding artwork
+docs/                   product, architecture, and design decisions
 ```
 
 Rules for implementation:
