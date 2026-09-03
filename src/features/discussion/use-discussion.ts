@@ -88,6 +88,7 @@ export function useDiscussionThread(captureId: string | undefined) {
   const [composer, setComposerState] = useState("");
   const [refreshToken, setRefreshToken] = useState(0);
   const loadedCaptureId = useRef<string | null>(null);
+  const dataRef = useRef<DiscussionThreadData | null>(null);
   const selectedGeneration = useRef<DataGeneration | null>(null);
   const composerRef = useRef("");
   const draftWrites = useRef(Promise.resolve());
@@ -118,6 +119,7 @@ export function useDiscussionThread(captureId: string | undefined) {
     if (!captureId) {
       selectedGeneration.current = null;
       loadedCaptureId.current = null;
+      dataRef.current = null;
       setLoading(false);
       setData(null);
       setError(null);
@@ -125,16 +127,20 @@ export function useDiscussionThread(captureId: string | undefined) {
     }
     if (loadedCaptureId.current !== captureId) {
       selectedGeneration.current = null;
+      dataRef.current = null;
       setLoading(true);
       setData(null);
     }
     setError(null);
     let active = true;
+    let loadSequence = 0;
     let unsubscribe: (() => void) | null = null;
     const load = async () => {
+      const sequence = ++loadSequence;
       try {
         const next = await discussionService.loadThread(captureId);
-        if (!active) return;
+        if (!active || sequence !== loadSequence) return;
+        dataRef.current = next;
         setData(next);
         setError(null);
         setLoading(false);
@@ -145,11 +151,11 @@ export function useDiscussionThread(captureId: string | undefined) {
           setComposerState(composerRef.current);
         }
       } catch (reason) {
-        if (active) {
-          setData(null);
-          setLoading(false);
-          setError(normalizeError(reason, "database"));
-        }
+        if (!active || sequence !== loadSequence) return;
+        const detail = normalizeError(reason, "database");
+        setLoading(false);
+        if (dataRef.current) setNotice(detail);
+        else setError(detail);
       }
     };
     void getVaultDatabase()
@@ -170,9 +176,10 @@ export function useDiscussionThread(captureId: string | undefined) {
       })
       .catch((reason) => {
         if (active) {
-          setData(null);
           setLoading(false);
-          setError(normalizeError(reason, "database"));
+          const detail = normalizeError(reason, "database");
+          if (dataRef.current) setNotice(detail);
+          else setError(detail);
         }
       });
     return () => {

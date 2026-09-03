@@ -7,6 +7,8 @@
 
 import { useRouter, type Href } from "expo-router";
 import {
+  ArrowCounterClockwiseIcon as ArrowCounterClockwise,
+  KeyIcon as Key,
   MagnifyingGlassIcon as MagnifyingGlass,
   TextTIcon as TextT,
   TrashIcon as Trash,
@@ -47,8 +49,20 @@ export default function SettingsScreen() {
               {
                 icon: MagnifyingGlass,
                 label: "Research",
-                description: "Transcript transfer and grounding consent",
+                description: "Choose when and where reports search",
                 onPress: () => router.push("/settings/research" as Href),
+              },
+              {
+                icon: Key,
+                label: "Search API",
+                description: "Connect your SerpApi key",
+                onPress: () => router.push("/settings/search-api" as Href),
+              },
+              {
+                icon: ArrowCounterClockwise,
+                label: "Run setup again",
+                description: "Review onboarding without deleting your ideas",
+                onPress: () => router.push("/onboarding" as Href),
               },
             ]}
             additionalDataPrivacy={[

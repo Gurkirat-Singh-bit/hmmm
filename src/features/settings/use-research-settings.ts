@@ -34,6 +34,7 @@ export function useResearchSettings() {
   );
   const [searchKey, setSearchKey] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [provider, setProvider] = useState({
     id: "",
@@ -43,26 +44,30 @@ export function useResearchSettings() {
   });
 
   const load = useCallback(async () => {
-    const [preferences, search] = await Promise.all([
-      readPreferences(),
-      providerCredentials.readActive("search"),
-    ]);
-    setEnabledState(
-      preferences.researchEnabled &&
-        preferences.researchConsent.status === "granted",
-    );
-    setConsent(preferences.researchConsent.status);
-    setSource(preferences.researchSource);
-    setSearchKey(search?.secret ?? "");
-    setProvider({
-      id: preferences.aiProvider.providerId,
-      label: findAiProvider(preferences.aiProvider.providerId).label,
-      model: preferences.aiProvider.model,
-      supportsResearch: supportsProviderResearch(
-        preferences.aiProvider.providerId,
-        preferences.aiProvider.model,
-      ),
-    });
+    try {
+      const [preferences, search] = await Promise.all([
+        readPreferences(),
+        providerCredentials.readActive("search"),
+      ]);
+      setEnabledState(
+        preferences.researchEnabled &&
+          preferences.researchConsent.status === "granted",
+      );
+      setConsent(preferences.researchConsent.status);
+      setSource(preferences.researchSource);
+      setSearchKey(search?.secret ?? "");
+      setProvider({
+        id: preferences.aiProvider.providerId,
+        label: findAiProvider(preferences.aiProvider.providerId).label,
+        model: preferences.aiProvider.model,
+        supportsResearch: supportsProviderResearch(
+          preferences.aiProvider.providerId,
+          preferences.aiProvider.model,
+        ),
+      });
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -124,13 +129,41 @@ export function useResearchSettings() {
     await save(enabled, enabled ? "granted" : "denied");
   };
 
+  const saveSearchKey = async () => {
+    const apiKey = searchKey.trim();
+    if (!apiKey) {
+      setMessage("Paste a SerpApi key first.");
+      return false;
+    }
+    setSaving(true);
+    setMessage("Checking SerpApi…");
+    try {
+      await serpApiSearchProvider.probe({ apiKey });
+      await saveResearchPreferences({
+        enabled,
+        consent: enabled ? "granted" : "denied",
+        source,
+        searchKey: apiKey,
+      });
+      setMessage("SerpApi key verified and saved securely.");
+      return true;
+    } catch (error) {
+      setMessage(normalizeError(error, "provider-configuration").message);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     consent,
     enabled,
+    loading,
     message,
     provider,
     save,
     saveCurrent,
+    saveSearchKey,
     saving,
     searchKey,
     setEnabled,

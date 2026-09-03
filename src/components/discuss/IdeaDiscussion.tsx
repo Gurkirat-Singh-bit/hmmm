@@ -98,7 +98,7 @@ export function IdeaDiscussion({
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.keyboard}
       >
         <View style={styles.header}>
@@ -136,7 +136,6 @@ export function IdeaDiscussion({
           </Pressable>
         </View>
 
-        <IdeaContextStrip gist={data.report?.content.gist ?? null} />
         {notice ? (
           <Text accessibilityLiveRegion="polite" style={styles.notice}>
             {notice}
@@ -175,6 +174,7 @@ export function IdeaDiscussion({
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
         >
+          <IdeaContextStrip gist={data.report?.content.gist ?? null} />
           {data.messages.length ? (
             data.messages.map((message) => (
               <View key={message.id} style={styles.messageGroup}>

@@ -24,7 +24,7 @@ export default function IdeaDiscussionRoute() {
       />
     );
   }
-  if (thread.loading)
+  if (thread.loading && !thread.data)
     return (
       <DiscussionNotFound
         kind="loading"
@@ -32,7 +32,7 @@ export default function IdeaDiscussionRoute() {
         onVault={() => router.replace("/vault")}
       />
     );
-  if (thread.error)
+  if (thread.error && !thread.data)
     return (
       <DiscussionNotFound
         kind="error"

@@ -185,7 +185,6 @@ export function NameField({
           }
           accessibilityLabel="Your name"
           autoCapitalize="words"
-          autoFocus
           onChangeText={onChangeText}
           onFocus={onFocus}
           onSubmitEditing={onSubmit}

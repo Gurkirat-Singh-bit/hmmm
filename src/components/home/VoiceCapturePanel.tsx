@@ -122,7 +122,11 @@ function LiveCaption({
       style={styles.captionViewport}
     >
       {live && lines.previous ? (
-        <Text style={[styles.transcriptText, styles.previousWords]}>
+        <Text
+          ellipsizeMode="clip"
+          numberOfLines={1}
+          style={[styles.transcriptText, styles.previousWords]}
+        >
           {lines.previous}
         </Text>
       ) : null}
@@ -244,10 +248,12 @@ const styles = StyleSheet.create({
     letterSpacing: -1.5,
   },
   captionViewport: {
-    minHeight: 66,
+    width: "100%",
+    height: 66,
     alignItems: "center",
     justifyContent: "flex-end",
     marginTop: 6,
+    overflow: "hidden",
   },
   transcriptText: {
     maxWidth: 280,

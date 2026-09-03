@@ -80,9 +80,7 @@ function RootNavigator({ runtime }: { runtime: AppRuntimeSnapshot }) {
           headerShown: false,
         })}
       >
-        <Stack.Protected guard={!runtime.onboardingComplete}>
-          <Stack.Screen name="onboarding" />
-        </Stack.Protected>
+        <Stack.Screen name="onboarding" />
         <Stack.Protected guard={runtime.onboardingComplete}>
           <Stack.Screen name="index" />
           <Stack.Screen name="vault/index" />
@@ -100,6 +98,7 @@ function RootNavigator({ runtime }: { runtime: AppRuntimeSnapshot }) {
           <Stack.Screen name="settings/privacy" />
           <Stack.Screen name="settings/providers" />
           <Stack.Screen name="settings/research" />
+          <Stack.Screen name="settings/search-api" />
           <Stack.Screen name="settings/system-prompt" />
         </Stack.Protected>
         <Stack.Screen name="+not-found" />

@@ -5,12 +5,8 @@
  * @license MIT
  */
 
-import {
-  ArrowSquareOutIcon as ArrowSquareOut,
-  CheckIcon as Check,
-} from "phosphor-react-native";
-import * as Linking from "expo-linking";
-import { useRouter } from "expo-router";
+import { CheckIcon as Check, KeyIcon as Key } from "phosphor-react-native";
+import { useRouter, type Href } from "expo-router";
 import {
   ActivityIndicator,
   Pressable,
@@ -20,10 +16,8 @@ import {
   View,
 } from "react-native";
 
-import { SecretField } from "@/components/onboarding/OnboardingFields";
 import { SettingsSubpage } from "@/components/settings/SettingsSubpage";
 import { colors, onboardingFonts, radii } from "@/constants/theme";
-import { SERPAPI_MANAGE_KEY_URL } from "@/features/provider/config";
 import { useResearchSettings } from "@/features/settings/use-research-settings";
 
 /** Renders provider research availability, behavior, and explicit consent controls. */
@@ -78,34 +72,28 @@ export default function ResearchSettingsScreen() {
       </View>
       {external ? (
         <View style={styles.searchCredential}>
-          <SecretField
-            attempted={settings.enabled && !settings.searchKey.trim()}
-            label="SERPAPI KEY"
-            light
-            onChangeText={settings.setSearchKey}
-            placeholder="Paste SerpApi key"
-            value={settings.searchKey}
-          />
+          <View style={styles.keyCopy}>
+            <Key color={colors.ink} size={20} weight="bold" />
+            <View style={styles.copy}>
+              <Text style={styles.label}>Search API</Text>
+              <Text style={styles.description}>
+                {settings.searchKey.trim()
+                  ? "SerpApi key is configured"
+                  : "Add your own SerpApi key"}
+              </Text>
+            </View>
+          </View>
           <Pressable
-            accessibilityHint="Opens the official SerpApi account page"
-            accessibilityLabel="Get a SerpApi key"
-            accessibilityRole="link"
-            onPress={() =>
-              void Linking.openURL(SERPAPI_MANAGE_KEY_URL).catch(
-                () => undefined,
-              )
-            }
+            accessibilityLabel="Configure Search API"
+            accessibilityRole="button"
+            onPress={() => router.push("/settings/search-api" as Href)}
             style={({ pressed }) => [
               styles.serpApiLink,
               pressed && styles.pressed,
             ]}
           >
-            <Text style={styles.serpApiLinkText}>Get a SerpApi key</Text>
-            <ArrowSquareOut color={colors.ink} size={17} weight="bold" />
+            <Text style={styles.serpApiLinkText}>Configure</Text>
           </Pressable>
-          <Text style={styles.retention}>
-            SerpApi may retain standard searches for 31 days.
-          </Text>
         </View>
       ) : null}
       {!external && !settings.provider.supportsResearch ? (
@@ -246,7 +234,9 @@ const styles = StyleSheet.create({
   },
   options: { gap: 10 },
   searchCredential: {
-    gap: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
     marginTop: 12,
     padding: 16,
     borderRadius: radii.large,
@@ -254,10 +244,9 @@ const styles = StyleSheet.create({
   },
   serpApiLink: {
     minHeight: 48,
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 15,
+    justifyContent: "center",
+    paddingHorizontal: 18,
     borderRadius: radii.medium,
     backgroundColor: colors.primary,
   },
@@ -266,12 +255,7 @@ const styles = StyleSheet.create({
     fontFamily: onboardingFonts.bodySemiBold,
     fontSize: 13,
   },
-  retention: {
-    color: colors.inkMuted,
-    fontFamily: onboardingFonts.bodyRegular,
-    fontSize: 11,
-    lineHeight: 17,
-  },
+  keyCopy: { flex: 1, minWidth: 0, flexDirection: "row", gap: 10 },
   privacyNote: {
     marginTop: 16,
     color: colors.inkMuted,

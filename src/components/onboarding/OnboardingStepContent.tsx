@@ -5,15 +5,7 @@
  * @license MIT
  */
 
-import { useEffect, useRef } from "react";
-import {
-  AccessibilityInfo,
-  Animated,
-  Image,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { Image, StyleSheet, Text, View } from "react-native";
 
 import {
   EndpointField,
@@ -57,49 +49,8 @@ export function OnboardingStepContent({
   const copy = getStepCopy(step, flow.name);
   const illustration =
     step < illustrations.length ? illustrations[step as 0 | 1 | 2 | 3] : null;
-  const entrance = useRef(new Animated.Value(1)).current;
-  const reduceMotion = useRef(false);
-
-  useEffect(() => {
-    void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
-      reduceMotion.current = enabled;
-    });
-    const subscription = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      (enabled) => {
-        reduceMotion.current = enabled;
-      },
-    );
-    return () => subscription.remove();
-  }, []);
-
-  useEffect(() => {
-    if (reduceMotion.current) {
-      entrance.setValue(1);
-      return;
-    }
-    entrance.setValue(0);
-    Animated.timing(entrance, {
-      duration: 180,
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
-  }, [entrance, step]);
-
   return (
-    <Animated.View
-      style={{
-        opacity: entrance,
-        transform: [
-          {
-            translateY: entrance.interpolate({
-              inputRange: [0, 1],
-              outputRange: [4, 0],
-            }),
-          },
-        ],
-      }}
-    >
+    <View>
       {illustration ? (
         <View
           style={[
@@ -134,7 +85,7 @@ export function OnboardingStepContent({
       {step === 2 ? <AiSetup flow={flow} /> : null}
       {step === 3 ? <ResearchSetup flow={flow} /> : null}
       {step === 4 ? <SetupSummary flow={flow} /> : null}
-    </Animated.View>
+    </View>
   );
 }
 function SetupSummary({ flow }: { flow: Flow }) {

@@ -42,7 +42,7 @@ export function IdeaContextStrip({ gist }: { gist: string | null }) {
           )}
         </View>
       </Pressable>
-      <Text numberOfLines={expanded ? undefined : 2} style={styles.gist}>
+      <Text numberOfLines={expanded ? 8 : 2} style={styles.gist}>
         {content}
       </Text>
     </View>
@@ -52,12 +52,12 @@ export function IdeaContextStrip({ gist }: { gist: string | null }) {
 const styles = StyleSheet.create({
   context: {
     gap: 1,
-    marginTop: 8,
-    paddingHorizontal: 20,
+    overflow: "hidden",
+    paddingHorizontal: 16,
     paddingBottom: 12,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderWidth: StyleSheet.hairlineWidth,
     borderColor: colors.line,
+    borderRadius: 18,
     backgroundColor: colors.primarySoft,
   },
   toggle: {
