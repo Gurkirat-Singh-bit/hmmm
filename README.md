@@ -2,7 +2,7 @@
 
 > Local-first, voice-first idea capture for Android. Speak an idea, walk away, and come back to a structured report you can search, question, and share.
 
-<!-- Hero screenshot goes here. Drop the app screenshot at `src/assets/screenshots/hero.png` and update the line below. -->
+<!-- Hero screenshot of the capture screen -->
 ![Hmmmidea](src/assets/screenshots/hero.png)
 
 Hmmmidea turns a fleeting thought into a **structured, searchable idea report** without forcing you to organize anything up front. You open the app, tap record, and talk. In the background, durable on-device jobs transcribe your words and shape them into a report with a gist, evidence, risks, and a next move.
