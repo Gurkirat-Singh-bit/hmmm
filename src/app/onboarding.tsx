@@ -87,10 +87,10 @@ export default function OnboardingScreen() {
           <OnboardingStepContent
             compact={height < 740}
             flow={flow}
-            onNameFocus={() =>
+            onFieldFocus={() =>
               setTimeout(
                 () => scrollRef.current?.scrollToEnd({ animated: true }),
-                180,
+                250,
               )
             }
             onNameSubmit={moveForward}

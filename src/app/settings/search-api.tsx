@@ -34,7 +34,7 @@ export default function SearchApiSettingsScreen() {
   return (
     <SettingsSubpage
       supporting="Use Google sources in reports."
-      title="Search API"
+      title="SerpApi key"
     >
       <View style={styles.explainer}>
         <Text style={styles.explainerTitle}>What SerpApi does</Text>

@@ -21,12 +21,12 @@ export function MainBrandHeader() {
 }
 
 const styles = StyleSheet.create({
-  header: { height: 38, flexDirection: "row", alignItems: "center", gap: 8 },
-  logo: { width: 32, height: 32 },
+  header: { height: 57, flexDirection: "row", alignItems: "center", gap: 12 },
+  logo: { width: 48, height: 48 },
   name: {
     color: colors.ink,
     fontFamily: onboardingFonts.displaySemiBold,
-    fontSize: 17,
-    letterSpacing: -0.3,
+    fontSize: 26,
+    letterSpacing: -0.4,
   },
 });

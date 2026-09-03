@@ -51,11 +51,8 @@
         "expo-font",
         {
           "fonts": [
-            "node_modules/@expo-google-fonts/inter/400Regular/Inter_400Regular.ttf",
-            "node_modules/@expo-google-fonts/inter/500Medium/Inter_500Medium.ttf",
-            "node_modules/@expo-google-fonts/inter/600SemiBold/Inter_600SemiBold.ttf",
-            "node_modules/@expo-google-fonts/inter/700Bold/Inter_700Bold.ttf",
-            "node_modules/@expo-google-fonts/inter/900Black/Inter_900Black.ttf"
+            "node_modules/@expo-google-fonts/comic-relief/400Regular/ComicRelief_400Regular.ttf",
+            "node_modules/@expo-google-fonts/comic-relief/700Bold/ComicRelief_700Bold.ttf"
           ]
         }
       ]

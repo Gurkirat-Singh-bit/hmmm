@@ -369,6 +369,9 @@ const styles = StyleSheet.create({
     color: colors.ink,
     fontFamily: onboardingFonts.bodyRegular,
     fontSize: 15,
+    includeFontPadding: false,
+    paddingVertical: 0,
+    textAlignVertical: "center",
   },
   list: { paddingHorizontal: spacing.page, paddingTop: 14, paddingBottom: 32 },
   resultCount: {

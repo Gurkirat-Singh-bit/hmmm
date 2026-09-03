@@ -204,16 +204,25 @@ export function IdeaDiscussion({
               </View>
             ))
           ) : (
-            <ConversationEmpty />
+            <View style={styles.emptyState}>
+              <ConversationEmpty />
+              <DiscussionPromptChips
+                disabled={sending}
+                onChoose={onSetComposer}
+              />
+            </View>
           )}
         </ScrollView>
 
-        {!data.messages.length ? (
-          <DiscussionPromptChips disabled={sending} onChoose={onSetComposer} />
-        ) : null}
         <DiscussionComposer
           availability={data.availability}
           onChange={onSetComposer}
+          onFocus={() => {
+            nearBottomRef.current = true;
+            requestAnimationFrame(() =>
+              scrollRef.current?.scrollToEnd({ animated: true }),
+            );
+          }}
           onSend={onSend}
           sending={sending}
           value={composer}
@@ -295,6 +304,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   messageGroup: { gap: 14 },
+  emptyState: { gap: 20 },
   empty: {
     padding: 20,
     borderRadius: radii.large,

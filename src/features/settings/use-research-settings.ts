@@ -91,10 +91,11 @@ export function useResearchSettings() {
       );
       return false;
     }
+    const externalEnabled = nextEnabled && source.kind === "external";
     setSaving(true);
-    setMessage(source.kind === "external" ? "Checking SerpApi…" : null);
+    setMessage(externalEnabled ? "Checking SerpApi…" : null);
     try {
-      if (source.kind === "external" && searchKey.trim()) {
+      if (externalEnabled && searchKey.trim()) {
         await serpApiSearchProvider.probe({ apiKey: searchKey.trim() });
       }
       await saveResearchPreferences({
@@ -106,11 +107,9 @@ export function useResearchSettings() {
       setEnabledState(nextEnabled && nextConsent === "granted");
       setConsent(nextConsent);
       setMessage(
-        source.kind === "external"
-          ? searchKey.trim()
-            ? "SerpApi verified and research settings saved."
-            : "SerpApi selected. Add and verify a key before enabling research."
-          : "Research settings saved.",
+        externalEnabled
+          ? "SerpApi verified and search choice saved."
+          : "Search choice saved.",
       );
       return true;
     } catch (error) {
@@ -121,8 +120,10 @@ export function useResearchSettings() {
     }
   };
 
-  const setEnabled = async (nextEnabled: boolean) => {
-    await save(nextEnabled, nextEnabled ? "granted" : "denied");
+  const setEnabledDraft = (nextEnabled: boolean) => {
+    setEnabledState(nextEnabled);
+    setConsent(nextEnabled ? "granted" : "denied");
+    setMessage(null);
   };
 
   const saveCurrent = async () => {
@@ -166,7 +167,7 @@ export function useResearchSettings() {
     saveSearchKey,
     saving,
     searchKey,
-    setEnabled,
+    setEnabledDraft,
     setSearchKey,
     setSource,
     source,

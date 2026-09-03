@@ -14,7 +14,7 @@
     "docs:audit": "bun scripts/audit-jsdoc.js"
   },
   "dependencies": {
-    "@expo-google-fonts/inter": "^0.4.2",
+    "@expo-google-fonts/comic-relief": "^0.4.0",
     "@react-navigation/native": "^7.1.8",
     "@siteed/audio-studio": "3.2.0",
     "expo": "~54.0.37",

@@ -33,22 +33,22 @@ const illustrations = [
   require("@/assets/Onboarding/Onboarding-2.png"),
   require("@/assets/Onboarding/Onboarding-3.png"),
   require("@/assets/Onboarding/Onboarding-4.png"),
+  require("@/assets/Onboarding/Onboarding-5.png"),
 ] as const;
 export function OnboardingStepContent({
   flow,
   compact,
-  onNameFocus,
+  onFieldFocus,
   onNameSubmit,
 }: {
   flow: Flow;
   compact: boolean;
-  onNameFocus(): void;
+  onFieldFocus(): void;
   onNameSubmit(): void;
 }) {
   const { step } = flow;
   const copy = getStepCopy(step, flow.name);
-  const illustration =
-    step < illustrations.length ? illustrations[step as 0 | 1 | 2 | 3] : null;
+  const illustration = illustrations[step];
   return (
     <View>
       {illustration ? (
@@ -76,14 +76,18 @@ export function OnboardingStepContent({
         <NameField
           attempted={flow.attempted}
           onChangeText={flow.setName}
-          onFocus={onNameFocus}
+          onFocus={onFieldFocus}
           onSubmit={onNameSubmit}
           value={flow.name}
         />
       ) : null}
-      {step === 1 ? <SpeechSetup flow={flow} /> : null}
-      {step === 2 ? <AiSetup flow={flow} /> : null}
-      {step === 3 ? <ResearchSetup flow={flow} /> : null}
+      {step === 1 ? (
+        <SpeechSetup flow={flow} onFieldFocus={onFieldFocus} />
+      ) : null}
+      {step === 2 ? <AiSetup flow={flow} onFieldFocus={onFieldFocus} /> : null}
+      {step === 3 ? (
+        <ResearchSetup flow={flow} onFieldFocus={onFieldFocus} />
+      ) : null}
       {step === 4 ? <SetupSummary flow={flow} /> : null}
     </View>
   );
@@ -108,7 +112,7 @@ function SetupSummary({ flow }: { flow: Flow }) {
         label="REPORTS & DISCUSS"
         value={`${ai.label} · ${flow.aiModel.trim()}`}
       />
-      <SummaryRow label="OPTIONAL RESEARCH" value={research} />
+      <SummaryRow label="WEB SEARCH" value={research} />
       <Text style={styles.summaryNote}>
         Keys are verified and stored securely on this device.
       </Text>
@@ -123,7 +127,13 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
     </View>
   );
 }
-function SpeechSetup({ flow }: { flow: Flow }) {
+function SpeechSetup({
+  flow,
+  onFieldFocus,
+}: {
+  flow: Flow;
+  onFieldFocus(): void;
+}) {
   const provider = findSpeechProvider(flow.speechProvider);
   const catalog = useModelCatalog(
     "speech",
@@ -154,6 +164,7 @@ function SpeechSetup({ flow }: { flow: Flow }) {
           <EndpointField
             attempted={flow.attempted}
             onChangeText={flow.setSpeechEndpoint}
+            onFocus={onFieldFocus}
             value={flow.speechEndpoint}
           />
         ) : null}
@@ -161,6 +172,7 @@ function SpeechSetup({ flow }: { flow: Flow }) {
           attempted={flow.attempted}
           label="SPEECH API KEY"
           onChangeText={flow.setSpeechKey}
+          onFocus={onFieldFocus}
           placeholder="Paste speech API key"
           value={flow.speechKey}
         />
@@ -180,7 +192,7 @@ function SpeechSetup({ flow }: { flow: Flow }) {
     </View>
   );
 }
-function AiSetup({ flow }: { flow: Flow }) {
+function AiSetup({ flow, onFieldFocus }: { flow: Flow; onFieldFocus(): void }) {
   const provider = findAiProvider(flow.aiProvider);
   const catalog = useModelCatalog("ai", provider, flow.aiKey, flow.aiEndpoint);
   return (
@@ -204,6 +216,7 @@ function AiSetup({ flow }: { flow: Flow }) {
           <EndpointField
             attempted={flow.attempted}
             onChangeText={flow.setAiEndpoint}
+            onFocus={onFieldFocus}
             value={flow.aiEndpoint}
           />
         ) : null}
@@ -211,6 +224,7 @@ function AiSetup({ flow }: { flow: Flow }) {
           attempted={flow.attempted}
           label="LLM API KEY"
           onChangeText={flow.setAiKey}
+          onFocus={onFieldFocus}
           placeholder="Paste LLM API key"
           value={flow.aiKey}
         />
@@ -230,7 +244,13 @@ function AiSetup({ flow }: { flow: Flow }) {
     </View>
   );
 }
-function ResearchSetup({ flow }: { flow: Flow }) {
+function ResearchSetup({
+  flow,
+  onFieldFocus,
+}: {
+  flow: Flow;
+  onFieldFocus(): void;
+}) {
   const provider = findAiProvider(flow.aiProvider);
   return (
     <View style={styles.setup}>
@@ -241,6 +261,7 @@ function ResearchSetup({ flow }: { flow: Flow }) {
           flow.aiModel,
         )}
         onChange={flow.setResearchConsent}
+        onFieldFocus={onFieldFocus}
         onSearchKeyChange={flow.setSearchKey}
         onSourceChange={flow.setResearchSource}
         providerLabel={provider.label}
@@ -266,8 +287,8 @@ function getStepCopy(step: Flow["step"], name: string) {
       body: "Creates reports and powers Discuss.",
     },
     {
-      heading: "Add sources?",
-      body: "Search can ground reports with links.",
+      heading: "Search online?",
+      body: "Choose how reports find supporting links.",
     },
     {
       heading: "Check your setup.",

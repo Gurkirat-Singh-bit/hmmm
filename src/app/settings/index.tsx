@@ -48,20 +48,20 @@ export default function SettingsScreen() {
               },
               {
                 icon: MagnifyingGlass,
-                label: "Research",
-                description: "Choose when and where reports search",
+                label: "Online search",
+                description: "Choose if reports search the web",
                 onPress: () => router.push("/settings/research" as Href),
               },
               {
                 icon: Key,
-                label: "Search API",
-                description: "Connect your SerpApi key",
+                label: "SerpApi key",
+                description: "Connect Google search",
                 onPress: () => router.push("/settings/search-api" as Href),
               },
               {
                 icon: ArrowCounterClockwise,
-                label: "Run setup again",
-                description: "Review onboarding without deleting your ideas",
+                label: "Back to onboarding",
+                description: "Review setup without deleting ideas",
                 onPress: () => router.push("/onboarding" as Href),
               },
             ]}

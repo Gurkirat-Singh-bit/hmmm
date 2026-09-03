@@ -209,6 +209,9 @@ const styles = StyleSheet.create({
     color: colors.ink,
     fontFamily: onboardingFonts.bodyRegular,
     fontSize: 13,
+    includeFontPadding: false,
+    paddingVertical: 0,
+    textAlignVertical: "center",
   },
   filters: { flexDirection: "row", gap: 8 },
   filter: {

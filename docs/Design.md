@@ -31,8 +31,8 @@ dark-surface: '#323232'
 dark-line: 'rgba(255, 255, 255, 0.12)'
 
 typography:
-display: Inter
-body: Inter
+display: Comic Relief
+body: Comic Relief
 
 rounded:
 small: 10
@@ -113,7 +113,7 @@ Use them particularly well for focused questionnaires, onboarding steps, modal f
 
 ## Typography
 
-Use bundled Inter throughout the app. Its regular, medium, semibold, bold, and black weights create hierarchy without bubbly letterforms or network requests.
+Use bundled Comic Relief throughout the app. Regular carries body copy; bold creates hierarchy for headings, labels, and actions without network requests.
 
 Recommended hierarchy:
 

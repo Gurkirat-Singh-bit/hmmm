@@ -107,11 +107,13 @@ export function EndpointField({
   light = false,
   value,
   onChangeText,
+  onFocus,
 }: {
   attempted?: boolean;
   light?: boolean;
   value: string;
   onChangeText(value: string): void;
+  onFocus?(): void;
 }) {
   const error = attempted && !safeEndpoint(value);
   return (
@@ -138,6 +140,7 @@ export function EndpointField({
           autoCorrect={false}
           keyboardType="url"
           onChangeText={onChangeText}
+          onFocus={onFocus}
           placeholder="https://api.example.com/v1"
           placeholderTextColor={light ? colors.inkMuted : colors.darkMuted}
           style={[styles.input, light && styles.lightText]}
@@ -207,6 +210,7 @@ export function ResearchTransferChoices({
   source,
   value,
   onChange,
+  onFieldFocus,
   onSearchKeyChange,
   onSourceChange,
 }: {
@@ -217,34 +221,51 @@ export function ResearchTransferChoices({
   source: ResearchSource;
   value: "unknown" | "granted" | "denied";
   onChange(value: "granted" | "denied"): void;
+  onFieldFocus(): void;
   onSearchKeyChange(value: string): void;
   onSourceChange(value: ResearchSource): void;
 }) {
   const external = source.kind === "external";
+  const externalSelected = value === "granted" && external;
   return (
     <View style={styles.researchGroup}>
-      <Text style={styles.label}>RESEARCH SOURCE</Text>
+      <Text style={styles.label}>SEARCH ONLINE?</Text>
       <View accessibilityRole="radiogroup" style={styles.researchChoices}>
         <ResearchChoice
-          active={!external}
-          body={`${providerLabel} searches the web.`}
-          label="Use my AI provider"
-          onPress={() => onSourceChange({ kind: "ai-native" })}
+          active={value === "denied"}
+          body="Use only your transcript."
+          label="No web search"
+          onPress={() => onChange("denied")}
         />
         <ResearchChoice
-          active={external}
-          body="Google results with your key."
-          label="SerpApi"
-          onPress={() =>
+          active={value === "granted" && !external}
+          body={
+            nativeSupported
+              ? "Search with your AI model."
+              : "Unavailable with this model."
+          }
+          disabled={!nativeSupported}
+          label={`Use ${providerLabel}`}
+          onPress={() => {
+            onSourceChange({ kind: "ai-native" });
+            onChange("granted");
+          }}
+        />
+        <ResearchChoice
+          active={externalSelected}
+          body="Google search with your own key."
+          label="Use SerpApi"
+          onPress={() => {
             onSourceChange({
               kind: "external",
               providerId: "serpapi",
               engine: "google",
-            })
-          }
+            });
+            onChange("granted");
+          }}
         />
       </View>
-      {external ? (
+      {externalSelected ? (
         <View style={styles.fieldGroup}>
           <Text style={styles.researchBody}>
             SerpApi searches Google; up to six results go to {providerLabel}.
@@ -270,81 +291,14 @@ export function ResearchTransferChoices({
             attempted={attempted && value === "granted"}
             label="SERPAPI KEY"
             onChangeText={onSearchKeyChange}
+            onFocus={onFieldFocus}
             placeholder="Paste SerpApi key"
             value={searchKey}
           />
         </View>
       ) : null}
-      {attempted && value === "granted" && !external && !nativeSupported ? (
-        <FieldStatus
-          error
-          message="Choose a native-search model or use SerpApi"
-        />
-      ) : null}
-      <Text style={styles.label}>CONSENT</Text>
-      <View accessibilityRole="radiogroup" style={styles.researchChoices}>
-        <Pressable
-          accessibilityLabel="Use web search for sourced reports"
-          accessibilityRole="radio"
-          accessibilityState={{ checked: value === "granted" }}
-          onPress={() => onChange("granted")}
-          style={({ pressed }) => [
-            styles.researchChoice,
-            value === "granted" && styles.researchChoiceSelected,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Text
-            style={[
-              styles.researchChoiceTitle,
-              value === "granted" && styles.researchChoiceTextSelected,
-            ]}
-          >
-            Use search
-          </Text>
-          <Text
-            style={[
-              styles.researchChoiceBody,
-              value === "granted" && styles.researchChoiceTextSelected,
-            ]}
-          >
-            Add sources to reports.
-          </Text>
-        </Pressable>
-        <Pressable
-          accessibilityLabel="Do not use web search"
-          accessibilityRole="radio"
-          accessibilityState={{ checked: value === "denied" }}
-          onPress={() => onChange("denied")}
-          style={({ pressed }) => [
-            styles.researchChoice,
-            value === "denied" && styles.researchChoiceSelected,
-            pressed && styles.pressed,
-          ]}
-        >
-          <Text
-            style={[
-              styles.researchChoiceTitle,
-              value === "denied" && styles.researchChoiceTextSelected,
-            ]}
-          >
-            No search
-          </Text>
-          <Text
-            style={[
-              styles.researchChoiceBody,
-              value === "denied" && styles.researchChoiceTextSelected,
-            ]}
-          >
-            Transcript only.
-          </Text>
-        </Pressable>
-      </View>
       {attempted && value === "unknown" ? (
-        <FieldStatus
-          error
-          message="Choose whether reports may search the web"
-        />
+        <FieldStatus error message="Choose a search option" />
       ) : null}
     </View>
   );
@@ -352,11 +306,13 @@ export function ResearchTransferChoices({
 function ResearchChoice({
   active,
   body,
+  disabled = false,
   label,
   onPress,
 }: {
   active: boolean;
   body: string;
+  disabled?: boolean;
   label: string;
   onPress(): void;
 }) {
@@ -365,12 +321,14 @@ function ResearchChoice({
       accessibilityHint={body}
       accessibilityLabel={label}
       accessibilityRole="radio"
-      accessibilityState={{ checked: active }}
+      accessibilityState={{ checked: active, disabled }}
+      disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
         styles.researchChoice,
         active && styles.researchChoiceSelected,
         pressed && styles.pressed,
+        disabled && styles.disabled,
       ]}
     >
       <Text
@@ -399,6 +357,7 @@ export function SecretField({
   placeholder,
   value,
   onChangeText,
+  onFocus,
 }: {
   attempted: boolean;
   label: string;
@@ -406,6 +365,7 @@ export function SecretField({
   placeholder: string;
   value: string;
   onChangeText(value: string): void;
+  onFocus?(): void;
 }) {
   const [visible, setVisible] = useState(false);
   const complete = Boolean(value.trim());
@@ -438,6 +398,7 @@ export function SecretField({
           autoCapitalize="none"
           autoCorrect={false}
           onChangeText={onChangeText}
+          onFocus={onFocus}
           placeholder={placeholder}
           placeholderTextColor={light ? colors.inkMuted : colors.darkMuted}
           secureTextEntry={!visible}
@@ -523,6 +484,9 @@ const styles = StyleSheet.create({
     color: colors.inkInverse,
     fontFamily: onboardingFonts.bodyRegular,
     fontSize: 15,
+    includeFontPadding: false,
+    paddingVertical: 0,
+    textAlignVertical: "center",
   },
   status: {
     minHeight: 17,
@@ -594,6 +558,7 @@ const styles = StyleSheet.create({
     lineHeight: 15,
   },
   pressed: { opacity: 0.72 },
+  disabled: { opacity: 0.48 },
   choiceLight: { borderColor: colors.line, backgroundColor: colors.canvas },
   inputShellLight: { borderColor: colors.line, backgroundColor: colors.canvas },
   lightText: { color: colors.ink },

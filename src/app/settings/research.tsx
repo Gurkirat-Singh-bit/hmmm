@@ -11,7 +11,6 @@ import {
   ActivityIndicator,
   Pressable,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from "react-native";
@@ -27,55 +26,52 @@ export default function ResearchSettingsScreen() {
   const external = settings.source.kind === "external";
   return (
     <SettingsSubpage
-      supporting="Add current sources to new idea reports."
-      title="Research"
+      supporting="Choose if reports search the web."
+      title="Search online?"
     >
-      <View style={styles.row}>
-        <View style={styles.copy}>
-          <Text style={styles.label}>Search for report sources</Text>
-          <Text style={styles.description}>Off uses only your transcript.</Text>
-        </View>
-        <Switch
-          accessibilityLabel="Search for report sources"
-          accessibilityState={{
-            busy: settings.saving,
-            disabled: settings.saving,
-          }}
-          disabled={settings.saving}
-          onValueChange={(enabled) => void settings.setEnabled(enabled)}
-          trackColor={{ false: colors.lineStrong, true: colors.primary }}
-          value={settings.enabled}
-        />
-      </View>
-      <Text style={styles.sectionLabel}>SOURCE</Text>
       <View accessibilityRole="radiogroup" style={styles.options}>
         <ConsentOption
-          active={!external}
-          body={`${settings.provider.label} · ${settings.provider.model || "No model"}`}
+          active={!settings.enabled}
+          body="Use only your transcript"
           disabled={settings.saving}
-          label="AI search"
-          onPress={() => settings.setSource({ kind: "ai-native" })}
+          label="No web search"
+          onPress={() => settings.setEnabledDraft(false)}
         />
         <ConsentOption
-          active={external}
-          body="Google results with your own key"
+          active={settings.enabled && !external}
+          body={
+            settings.provider.supportsResearch
+              ? `Search with ${settings.provider.label}`
+              : "Unavailable with this model"
+          }
+          disabled={settings.saving || !settings.provider.supportsResearch}
+          label={`Use ${settings.provider.label}`}
+          onPress={() => {
+            settings.setSource({ kind: "ai-native" });
+            settings.setEnabledDraft(true);
+          }}
+        />
+        <ConsentOption
+          active={settings.enabled && external}
+          body="Google search with your own key"
           disabled={settings.saving}
-          label="SerpApi"
-          onPress={() =>
+          label="Use SerpApi"
+          onPress={() => {
             settings.setSource({
               kind: "external",
               providerId: "serpapi",
               engine: "google",
-            })
-          }
+            });
+            settings.setEnabledDraft(true);
+          }}
         />
       </View>
-      {external ? (
+      {settings.enabled && external ? (
         <View style={styles.searchCredential}>
           <View style={styles.keyCopy}>
             <Key color={colors.ink} size={20} weight="bold" />
             <View style={styles.copy}>
-              <Text style={styles.label}>Search API</Text>
+              <Text style={styles.label}>SerpApi key</Text>
               <Text style={styles.description}>
                 {settings.searchKey.trim()
                   ? "SerpApi key is configured"
@@ -84,7 +80,7 @@ export default function ResearchSettingsScreen() {
             </View>
           </View>
           <Pressable
-            accessibilityLabel="Configure Search API"
+            accessibilityLabel="Configure SerpApi key"
             accessibilityRole="button"
             onPress={() => router.push("/settings/search-api" as Href)}
             style={({ pressed }) => [
@@ -96,7 +92,7 @@ export default function ResearchSettingsScreen() {
           </Pressable>
         </View>
       ) : null}
-      {!external && !settings.provider.supportsResearch ? (
+      {settings.enabled && !external && !settings.provider.supportsResearch ? (
         <Pressable
           accessibilityRole="button"
           onPress={() => router.push("/settings/providers")}
@@ -111,11 +107,9 @@ export default function ResearchSettingsScreen() {
         </Pressable>
       ) : null}
       <Text style={styles.privacyNote}>
-        {external
-          ? `One derived query goes to SerpApi. Up to six result snippets and links go to ${settings.provider.label}.`
-          : `Relevant idea context goes to ${settings.provider.label}, which performs the search.`}{" "}
-        New and regenerated reports only. Discuss never searches, and failures
-        never switch providers.
+        {settings.enabled
+          ? "Search applies to new reports. Discuss never searches."
+          : "No transcript leaves the app for search."}
       </Text>
       {settings.message ? (
         <Text accessibilityLiveRegion="polite" style={styles.message}>
@@ -123,7 +117,7 @@ export default function ResearchSettingsScreen() {
         </Text>
       ) : null}
       <Pressable
-        accessibilityLabel="Verify and save research settings"
+        accessibilityLabel="Verify and save search choice"
         accessibilityRole="button"
         accessibilityState={{
           busy: settings.saving,
@@ -140,7 +134,7 @@ export default function ResearchSettingsScreen() {
         {settings.saving ? (
           <ActivityIndicator color={colors.inkInverse} />
         ) : (
-          <Text style={styles.saveButtonText}>Save research settings</Text>
+          <Text style={styles.saveButtonText}>Save search choice</Text>
         )}
       </Pressable>
     </SettingsSubpage>
@@ -203,15 +197,6 @@ const styles = StyleSheet.create({
     fontFamily: onboardingFonts.bodyBold,
     fontSize: 12,
   },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    marginTop: 14,
-    padding: 16,
-    borderRadius: radii.large,
-    backgroundColor: colors.canvas,
-  },
   copy: { flex: 1, gap: 3 },
   label: {
     color: colors.ink,
@@ -223,14 +208,6 @@ const styles = StyleSheet.create({
     fontFamily: onboardingFonts.bodyRegular,
     fontSize: 12,
     lineHeight: 17,
-  },
-  sectionLabel: {
-    marginTop: 24,
-    marginBottom: 8,
-    color: colors.inkMuted,
-    fontFamily: onboardingFonts.bodyBold,
-    fontSize: 10,
-    letterSpacing: 1,
   },
   options: { gap: 10 },
   searchCredential: {

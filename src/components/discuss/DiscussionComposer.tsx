@@ -25,6 +25,7 @@ import type { DiscussionAvailability } from "@/features/discussion/discussion-se
   sending,
   value,
   onChange,
+  onFocus,
   onSend,
 } - Value consumed by this operation.
  * @returns The computed result after delegated side effects complete.
@@ -35,12 +36,14 @@ export function DiscussionComposer({
   sending,
   value,
   onChange,
+  onFocus,
   onSend,
 }: {
   availability: DiscussionAvailability;
   sending: boolean;
   value: string;
   onChange(value: string): void;
+  onFocus?(): void;
   onSend(): void;
 }) {
   const unavailable = availability !== "ready";
@@ -59,6 +62,7 @@ export function DiscussionComposer({
           maxLength={1200}
           multiline
           onChangeText={onChange}
+          onFocus={onFocus}
           placeholder="Ask about this idea…"
           placeholderTextColor={colors.inkMuted}
           returnKeyType="default"
@@ -149,6 +153,7 @@ const styles = StyleSheet.create({
     color: colors.ink,
     fontFamily: onboardingFonts.bodyRegular,
     fontSize: 14,
+    includeFontPadding: false,
     lineHeight: 20,
   },
   send: {

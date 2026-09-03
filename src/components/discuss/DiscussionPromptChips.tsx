@@ -50,13 +50,12 @@ export function DiscussionPromptChips({
 const styles = StyleSheet.create({
   wrap: { gap: 8 },
   label: {
-    paddingHorizontal: 20,
     color: colors.inkMuted,
     fontFamily: onboardingFonts.bodyBold,
     fontSize: 9,
     letterSpacing: 0.9,
   },
-  chips: { gap: 8, paddingHorizontal: 20, paddingBottom: 2 },
+  chips: { gap: 8, paddingBottom: 2 },
   chip: {
     minHeight: 48,
     justifyContent: "center",
