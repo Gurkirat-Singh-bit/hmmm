@@ -110,8 +110,7 @@ function SetupSummary({ flow }: { flow: Flow }) {
       />
       <SummaryRow label="OPTIONAL RESEARCH" value={research} />
       <Text style={styles.summaryNote}>
-        Your keys will be verified, then saved only in this device&apos;s secure
-        key store. You can change every choice later in Settings.
+        Keys are verified and stored securely on this device.
       </Text>
     </View>
   );
@@ -176,9 +175,7 @@ function SpeechSetup({ flow }: { flow: Flow }) {
         />
       </View>
       <Text style={styles.transferNote}>
-        After you finish a recording, its source audio is sent directly to{" "}
-        {provider.label} for transcription. Hmmmidea does not relay it through
-        its own server.
+        {provider.label} receives audio for transcription.
       </Text>
     </View>
   );
@@ -228,7 +225,7 @@ function AiSetup({ flow }: { flow: Flow }) {
         />
       </View>
       <Text style={styles.transferNote}>
-        {provider.label} receives your transcript for reports and chat.
+        {provider.label} receives transcripts for reports and Discuss.
       </Text>
     </View>
   );
@@ -261,20 +258,20 @@ function getStepCopy(step: Flow["step"], name: string) {
       body: "This name is only used for your greeting.",
     },
     {
-      heading: "Turn your voice into words.",
-      body: "Choose the speech setup used after an idea is safely recorded.",
+      heading: "Choose transcription.",
+      body: "Turns recordings into text.",
     },
     {
-      heading: `Shape ideas, ${name.trim() || "your way"}.`,
-      body: "Choose the AI model used for reports and Discuss.",
+      heading: `Choose your AI, ${name.trim() || "your way"}.`,
+      body: "Creates reports and powers Discuss.",
     },
     {
-      heading: "Should reports search the web?",
-      body: "Keep it off, use your AI model, or connect SerpApi for Google results.",
+      heading: "Add sources?",
+      body: "Search can ground reports with links.",
     },
     {
-      heading: "Ready when you are.",
-      body: "Review your setup before Hmmmidea verifies each connection.",
+      heading: "Check your setup.",
+      body: "We’ll verify each connection before saving.",
     },
   ][step];
 }

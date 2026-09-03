@@ -98,7 +98,7 @@ export function IdeaDiscussion({
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={styles.keyboard}
       >
         <View style={styles.header}>

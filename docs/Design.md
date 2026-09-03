@@ -31,8 +31,8 @@ dark-surface: '#323232'
 dark-line: 'rgba(255, 255, 255, 0.12)'
 
 typography:
-display: DynaPuff
-body: Short Stack
+display: Inter
+body: Inter
 
 rounded:
 small: 10
@@ -113,7 +113,7 @@ Use them particularly well for focused questionnaires, onboarding steps, modal f
 
 ## Typography
 
-Use DynaPuff as the primary display and action face. Use Short Stack as the secondary face for supporting copy and longer text. Both fonts are bundled with the Android app, so typography never depends on a network request.
+Use bundled Inter throughout the app. Its regular, medium, semibold, bold, and black weights create hierarchy without bubbly letterforms or network requests.
 
 Recommended hierarchy:
 

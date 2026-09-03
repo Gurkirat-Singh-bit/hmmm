@@ -33,14 +33,14 @@ export default function SearchApiSettingsScreen() {
 
   return (
     <SettingsSubpage
-      supporting="Connect Google search results to idea reports."
+      supporting="Use Google sources in reports."
       title="Search API"
     >
       <View style={styles.explainer}>
         <Text style={styles.explainerTitle}>What SerpApi does</Text>
         <Text style={styles.explainerBody}>
-          It searches Google once per researched report. It is not used for
-          recording, transcription, or Discuss.
+          SerpApi runs one Google search per researched report. It never powers
+          transcription or Discuss.
         </Text>
       </View>
 

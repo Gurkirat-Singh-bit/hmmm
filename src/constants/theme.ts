@@ -39,12 +39,12 @@ export const radii = {
 } as const;
 
 export const onboardingFonts = {
-  displayRegular: "DynaPuff_400Regular",
-  displayMedium: "DynaPuff_500Medium",
-  displaySemiBold: "DynaPuff_600SemiBold",
-  displayBold: "DynaPuff_700Bold",
-  bodyRegular: "ShortStack_400Regular",
-  bodyMedium: "ShortStack_400Regular",
-  bodySemiBold: "DynaPuff_600SemiBold",
-  bodyBold: "DynaPuff_700Bold",
+  displayRegular: "Inter_400Regular",
+  displayMedium: "Inter_500Medium",
+  displaySemiBold: "Inter_600SemiBold",
+  displayBold: "Inter_900Black",
+  bodyRegular: "Inter_400Regular",
+  bodyMedium: "Inter_500Medium",
+  bodySemiBold: "Inter_600SemiBold",
+  bodyBold: "Inter_700Bold",
 } as const;

@@ -7,6 +7,7 @@
 
 import { useRef } from "react";
 import {
+  KeyboardAvoidingView,
   ScrollView,
   StyleSheet,
   Text,
@@ -51,7 +52,7 @@ export default function OnboardingScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.keyboard}>
+      <KeyboardAvoidingView behavior="height" style={styles.keyboard}>
         <View style={styles.topBar}>
           <Text style={styles.stepCount}>
             {flow.step + 1} OF {onboardingStepCount}
@@ -105,7 +106,7 @@ export default function OnboardingScreen() {
           saving={flow.saving}
           step={flow.step}
         />
-      </View>
+      </KeyboardAvoidingView>
       <OnboardingNotice
         notice={flow.notice}
         onClose={() => flow.setNotice(null)}

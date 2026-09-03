@@ -227,13 +227,13 @@ export function ResearchTransferChoices({
       <View accessibilityRole="radiogroup" style={styles.researchChoices}>
         <ResearchChoice
           active={!external}
-          body={`${providerLabel} searches directly. Requires a compatible model.`}
+          body={`${providerLabel} searches the web.`}
           label="Use my AI provider"
           onPress={() => onSourceChange({ kind: "ai-native" })}
         />
         <ResearchChoice
           active={external}
-          body="Gets Google results with a separate key."
+          body="Google results with your key."
           label="SerpApi"
           onPress={() =>
             onSourceChange({
@@ -247,12 +247,7 @@ export function ResearchTransferChoices({
       {external ? (
         <View style={styles.fieldGroup}>
           <Text style={styles.researchBody}>
-            SerpApi is only for adding Google sources to idea reports. It is not
-            used for transcription or Discuss.
-          </Text>
-          <Text style={styles.researchBody}>
-            One derived query goes to SerpApi. Up to six result snippets and
-            links then go to {providerLabel}.
+            SerpApi searches Google; up to six results go to {providerLabel}.
           </Text>
           <Pressable
             accessibilityHint="Opens the official SerpApi account page"
@@ -278,9 +273,6 @@ export function ResearchTransferChoices({
             placeholder="Paste SerpApi key"
             value={searchKey}
           />
-          <Text style={styles.researchBody}>
-            SerpApi may retain standard searches for 31 days.
-          </Text>
         </View>
       ) : null}
       {attempted && value === "granted" && !external && !nativeSupported ? (
@@ -316,7 +308,7 @@ export function ResearchTransferChoices({
               value === "granted" && styles.researchChoiceTextSelected,
             ]}
           >
-            Find sources when a report needs them.
+            Add sources to reports.
           </Text>
         </Pressable>
         <Pressable
@@ -344,7 +336,7 @@ export function ResearchTransferChoices({
               value === "denied" && styles.researchChoiceTextSelected,
             ]}
           >
-            Use only my transcript.
+            Transcript only.
           </Text>
         </Pressable>
       </View>
