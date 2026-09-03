@@ -243,6 +243,45 @@ describe("SQLite repositories", () => {
     );
   });
 
+  test("restarts a completed discussion reply with a fresh request id", async () => {
+    await commitCapture();
+    const { assistant } =
+      await repositories.messages.appendUserAndStartAssistant({
+        id: "message-user-1",
+        assistantId: "message-assistant-1",
+        captureId: "capture-1",
+        expectedGeneration: 0,
+        clientRequestId: "discussion-1",
+        content: "Challenge this idea.",
+        createdAt: now,
+      });
+    await repositories.messages.appendAssistantDelta(
+      assistant.id,
+      0,
+      1,
+      "First answer",
+      "2026-01-01T00:00:01.000Z",
+    );
+    await repositories.messages.finishAssistant(
+      assistant.id,
+      0,
+      null,
+      "2026-01-01T00:00:02.000Z",
+    );
+
+    const retried = await repositories.messages.retryAssistant(
+      assistant.id,
+      0,
+      "restart",
+      "discussion-2",
+      "2026-01-01T00:00:03.000Z",
+    );
+
+    expect(retried.status).toBe("streaming");
+    expect(retried.content).toBe("");
+    expect(retried.clientRequestId).toBe("discussion-2");
+  });
+
   test("cascades capture deletion and repeats the same operation safely", async () => {
     await commitCapture();
     await repositories.messages.appendUser({

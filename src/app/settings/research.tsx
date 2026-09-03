@@ -8,7 +8,6 @@
 import {
   ArrowSquareOutIcon as ArrowSquareOut,
   CheckIcon as Check,
-  MagnifyingGlassIcon as MagnifyingGlass,
 } from "phosphor-react-native";
 import * as Linking from "expo-linking";
 import { useRouter } from "expo-router";
@@ -24,48 +23,48 @@ import {
 import { SecretField } from "@/components/onboarding/OnboardingFields";
 import { SettingsSubpage } from "@/components/settings/SettingsSubpage";
 import { colors, onboardingFonts, radii } from "@/constants/theme";
-import {
-  researchProviderDescription,
-  SERPAPI_MANAGE_KEY_URL,
-} from "@/features/provider/config";
+import { SERPAPI_MANAGE_KEY_URL } from "@/features/provider/config";
 import { useResearchSettings } from "@/features/settings/use-research-settings";
 
 /** Renders provider research availability, behavior, and explicit consent controls. */
 export default function ResearchSettingsScreen() {
   const router = useRouter();
   const settings = useResearchSettings();
-  const choose = (consent: "granted" | "denied") =>
-    void settings.save(
-      consent === "granted" && settings.enabled && settings.sourceReady,
-      consent,
-    );
-  const researchSwitchDisabled =
-    settings.saving || (!settings.sourceReady && !settings.enabled);
   const external = settings.source.kind === "external";
   return (
     <SettingsSubpage
-      supporting="Choose AI-native search or SerpApi. Requests go directly from your device, never through a Hmmmidea server."
+      supporting="Add current sources to new idea reports."
       title="Research"
     >
-      <View style={styles.notice}>
-        <MagnifyingGlass color={colors.ink} size={20} weight="bold" />
-        <Text style={styles.noticeText}>
-          Research is explicit. Hmmmidea never switches search providers after a
-          failure, and your saved capture remains on this device.
-        </Text>
+      <View style={styles.row}>
+        <View style={styles.copy}>
+          <Text style={styles.label}>Search for report sources</Text>
+          <Text style={styles.description}>Off uses only your transcript.</Text>
+        </View>
+        <Switch
+          accessibilityLabel="Search for report sources"
+          accessibilityState={{
+            busy: settings.saving,
+            disabled: settings.saving,
+          }}
+          disabled={settings.saving}
+          onValueChange={(enabled) => void settings.setEnabled(enabled)}
+          trackColor={{ false: colors.lineStrong, true: colors.primary }}
+          value={settings.enabled}
+        />
       </View>
-      <Text style={styles.sectionLabel}>SEARCH SOURCE</Text>
+      <Text style={styles.sectionLabel}>SOURCE</Text>
       <View accessibilityRole="radiogroup" style={styles.options}>
         <ConsentOption
           active={!external}
-          body="Uses the selected AI model's native search tools. Only supported models can enable it."
+          body={`${settings.provider.label} · ${settings.provider.model || "No model"}`}
           disabled={settings.saving}
-          label="AI-native search"
+          label="AI search"
           onPress={() => settings.setSource({ kind: "ai-native" })}
         />
         <ConsentOption
           active={external}
-          body="Plans one Google query, then gives selected snippets and links to your AI provider."
+          body="Google results with your own key"
           disabled={settings.saving}
           label="SerpApi"
           onPress={() =>
@@ -79,15 +78,17 @@ export default function ResearchSettingsScreen() {
       </View>
       {external ? (
         <View style={styles.searchCredential}>
-          <Text style={styles.serpApiExplanation}>
-            SerpApi is a separate service that returns Google search results.
-            Hmmmidea uses it only for optional sourced reports, never for
-            transcription or Discuss. You can use AI-native search or keep
-            research off without a SerpApi account.
-          </Text>
+          <SecretField
+            attempted={settings.enabled && !settings.searchKey.trim()}
+            label="SERPAPI KEY"
+            light
+            onChangeText={settings.setSearchKey}
+            placeholder="Paste SerpApi key"
+            value={settings.searchKey}
+          />
           <Pressable
             accessibilityHint="Opens the official SerpApi account page"
-            accessibilityLabel="Create a SerpApi account or get an API key"
+            accessibilityLabel="Get a SerpApi key"
             accessibilityRole="link"
             onPress={() =>
               void Linking.openURL(SERPAPI_MANAGE_KEY_URL).catch(
@@ -100,125 +101,34 @@ export default function ResearchSettingsScreen() {
             ]}
           >
             <Text style={styles.serpApiLinkText}>Get a SerpApi key</Text>
-            <ArrowSquareOut color={colors.inkInverse} size={18} weight="bold" />
+            <ArrowSquareOut color={colors.ink} size={17} weight="bold" />
           </Pressable>
-          <SecretField
-            attempted={settings.enabled && !settings.searchKey.trim()}
-            label="SERPAPI KEY"
-            light
-            onChangeText={settings.setSearchKey}
-            placeholder="Paste SerpApi key"
-            value={settings.searchKey}
-          />
           <Text style={styles.retention}>
-            SerpApi says standard searches may be retained for 31 days.
-            ZeroTrace is available only on Enterprise plans.
+            SerpApi may retain standard searches for 31 days.
           </Text>
         </View>
       ) : null}
-      <View
-        style={[
-          styles.provider,
-          !settings.sourceReady && styles.providerUnsupported,
-        ]}
-      >
-        <Text style={styles.providerEyebrow}>CURRENT RESEARCH PATH</Text>
-        <Text style={styles.providerTitle}>
-          {external ? "SerpApi · Google" : settings.provider.label}
-        </Text>
-        <Text numberOfLines={2} style={styles.providerModel}>
-          {external
-            ? `Query planner: ${settings.provider.model || "No model selected"}`
-            : settings.provider.model || "No model selected"}
-        </Text>
-        <Text style={styles.providerStatus}>
-          {settings.sourceReady
-            ? "Research is available for this setup."
-            : external
-              ? "Add a SerpApi key to enable research."
-              : "This model cannot use native search from Hmmmidea."}
-        </Text>
-        {!external && !settings.provider.supportsResearch ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push("/settings/providers")}
-            style={({ pressed }) => [
-              styles.providerButton,
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.providerButtonText}>
-              Choose a native-search model
-            </Text>
-          </Pressable>
-        ) : null}
-      </View>
-      <View style={styles.row}>
-        <View style={styles.copy}>
-          <Text style={styles.label}>Use optional research</Text>
-          <Text style={styles.description}>
-            Applies to new reports and regenerated revisions. Existing reports
-            do not change automatically.
+      {!external && !settings.provider.supportsResearch ? (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/settings/providers")}
+          style={({ pressed }) => [
+            styles.providerButton,
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={styles.providerButtonText}>
+            Choose a searchable AI model
           </Text>
-        </View>
-        <Switch
-          accessibilityLabel="Use optional research"
-          accessibilityState={{
-            busy: settings.saving,
-            disabled: researchSwitchDisabled,
-          }}
-          disabled={researchSwitchDisabled}
-          onValueChange={(enabled) => void settings.setEnabled(enabled)}
-          trackColor={{ false: colors.lineStrong, true: colors.primary }}
-          value={settings.enabled}
-        />
-      </View>
-      <Text style={styles.sectionLabel}>HOW THIS SETUP SEARCHES</Text>
-      <View style={styles.explanation}>
-        <Text style={styles.explanationTitle}>
-          {settings.provider.label} · {settings.provider.model || "No model"}
-        </Text>
-        <Text style={styles.explanationBody}>
-          {external
-            ? "The selected AI model creates one query without web tools. SerpApi runs one Google search with SafeSearch active and cached results allowed."
-            : researchProviderDescription(
-                settings.provider.id,
-                settings.provider.model,
-              )}
-        </Text>
-        <Text style={styles.explanationBody}>
-          {external
-            ? "Only the derived query goes to SerpApi. Up to six selected titles, snippets, and links are then sent to your configured AI provider and stored with the report revision."
-            : "Only new or regenerated reports can research. Source titles, links, and cited findings are stored locally with that report revision."}{" "}
-          Discuss never starts a web search.
-        </Text>
-      </View>
-      <Text style={styles.sectionLabel}>RESEARCH CONSENT</Text>
-      <View accessibilityRole="radiogroup" style={styles.options}>
-        <ConsentOption
-          active={settings.consent === "granted"}
-          body={
-            external
-              ? "Allow a derived query to go to SerpApi and selected snippets and links to go to the AI provider."
-              : "Allow relevant transcript context to go to the AI provider's native search tools."
-          }
-          disabled={settings.saving}
-          label="Allow researched reports"
-          onPress={() => choose("granted")}
-        />
-        <ConsentOption
-          active={settings.consent === "denied"}
-          body="Reports use the transcript only. No search request is made."
-          disabled={settings.saving}
-          label="Keep research off"
-          onPress={() => choose("denied")}
-        />
-      </View>
-      {settings.consent === "unknown" ? (
-        <Text accessibilityRole="alert" style={styles.pending}>
-          Choose an option before a research request can run.
-        </Text>
+        </Pressable>
       ) : null}
+      <Text style={styles.privacyNote}>
+        {external
+          ? `One derived query goes to SerpApi. Up to six result snippets and links go to ${settings.provider.label}.`
+          : `Relevant idea context goes to ${settings.provider.label}, which performs the search.`}{" "}
+        New and regenerated reports only. Discuss never searches, and failures
+        never switch providers.
+      </Text>
       {settings.message ? (
         <Text accessibilityLiveRegion="polite" style={styles.message}>
           {settings.message}
@@ -242,13 +152,9 @@ export default function ResearchSettingsScreen() {
         {settings.saving ? (
           <ActivityIndicator color={colors.inkInverse} />
         ) : (
-          <Text style={styles.saveButtonText}>Verify and save research</Text>
+          <Text style={styles.saveButtonText}>Save research settings</Text>
         )}
       </Pressable>
-      <Text style={styles.afterward}>
-        After enabling research, return to an idea and regenerate its report.
-        Discuss remains grounded in the saved idea and does not silently browse.
-      </Text>
     </SettingsSubpage>
   );
 }
@@ -294,54 +200,6 @@ function ConsentOption({
 }
 
 const styles = StyleSheet.create({
-  notice: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-    padding: 16,
-    borderRadius: radii.large,
-    backgroundColor: colors.happySoft,
-  },
-  noticeText: {
-    flex: 1,
-    color: colors.ink,
-    fontFamily: onboardingFonts.bodyRegular,
-    fontSize: 13,
-    lineHeight: 19,
-  },
-  provider: {
-    gap: 4,
-    marginTop: 14,
-    padding: 16,
-    borderRadius: radii.large,
-    backgroundColor: colors.calmSoft,
-  },
-  providerUnsupported: { backgroundColor: colors.surfaceMuted },
-  providerEyebrow: {
-    marginBottom: 3,
-    color: colors.inkMuted,
-    fontFamily: onboardingFonts.bodyBold,
-    fontSize: 10,
-    letterSpacing: 1,
-  },
-  providerTitle: {
-    color: colors.ink,
-    fontFamily: onboardingFonts.displaySemiBold,
-    fontSize: 17,
-  },
-  providerModel: {
-    color: colors.inkSecondary,
-    fontFamily: onboardingFonts.bodyMedium,
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  providerStatus: {
-    marginTop: 3,
-    color: colors.inkMuted,
-    fontFamily: onboardingFonts.bodyRegular,
-    fontSize: 12,
-    lineHeight: 17,
-  },
   providerButton: {
     minHeight: 48,
     alignItems: "center",
@@ -394,12 +252,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.large,
     backgroundColor: colors.surfaceMuted,
   },
-  serpApiExplanation: {
-    color: colors.inkSecondary,
-    fontFamily: onboardingFonts.bodyRegular,
-    fontSize: 12,
-    lineHeight: 18,
-  },
   serpApiLink: {
     minHeight: 48,
     flexDirection: "row",
@@ -407,10 +259,10 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     paddingHorizontal: 15,
     borderRadius: radii.medium,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.primary,
   },
   serpApiLinkText: {
-    color: colors.inkInverse,
+    color: colors.ink,
     fontFamily: onboardingFonts.bodySemiBold,
     fontSize: 13,
   },
@@ -420,21 +272,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 17,
   },
-  explanation: {
-    gap: 7,
-    paddingVertical: 4,
-    paddingHorizontal: 2,
-  },
-  explanationTitle: {
-    color: colors.ink,
-    fontFamily: onboardingFonts.bodySemiBold,
-    fontSize: 14,
-  },
-  explanationBody: {
+  privacyNote: {
+    marginTop: 16,
     color: colors.inkMuted,
     fontFamily: onboardingFonts.bodyRegular,
-    fontSize: 12,
-    lineHeight: 18,
+    fontSize: 11,
+    lineHeight: 17,
   },
   option: {
     minHeight: 82,
@@ -459,12 +302,6 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   activeText: { color: colors.ink },
-  pending: {
-    marginTop: 12,
-    color: colors.danger,
-    fontFamily: onboardingFonts.bodySemiBold,
-    fontSize: 12,
-  },
   message: {
     marginTop: 12,
     color: colors.inkMuted,
@@ -484,13 +321,6 @@ const styles = StyleSheet.create({
     color: colors.inkInverse,
     fontFamily: onboardingFonts.bodyBold,
     fontSize: 14,
-  },
-  afterward: {
-    marginTop: 18,
-    color: colors.inkMuted,
-    fontFamily: onboardingFonts.bodyRegular,
-    fontSize: 12,
-    lineHeight: 18,
   },
   pressed: { opacity: 0.7 },
   disabled: { opacity: 0.55 },

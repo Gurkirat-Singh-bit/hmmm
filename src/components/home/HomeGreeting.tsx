@@ -13,7 +13,7 @@ export function HomeGreeting({ name }: { name: string }) {
     <View>
       <MainBrandHeader />
       <View style={styles.copy}>
-        <Text accessibilityRole="header" style={styles.title}>
+        <Text accessibilityRole="header" numberOfLines={2} style={styles.title}>
           Hello, {name}
         </Text>
         <Text style={styles.body}>What idea is on your mind today?</Text>

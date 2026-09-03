@@ -117,24 +117,11 @@ export function useResearchSettings() {
   };
 
   const setEnabled = async (nextEnabled: boolean) => {
-    if (nextEnabled && consent !== "granted") {
-      setMessage(
-        consent === "unknown"
-          ? "Choose a research consent option before turning research on."
-          : "Allow research transfers before turning research on.",
-      );
-      return;
-    }
-    if (!nextEnabled && consent === "unknown") return;
-    await save(nextEnabled, consent === "unknown" ? "denied" : consent);
+    await save(nextEnabled, nextEnabled ? "granted" : "denied");
   };
 
   const saveCurrent = async () => {
-    if (consent === "unknown") {
-      setMessage("Choose a research consent option before saving.");
-      return;
-    }
-    await save(enabled, consent);
+    await save(enabled, enabled ? "granted" : "denied");
   };
 
   return {

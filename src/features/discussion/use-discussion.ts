@@ -115,16 +115,19 @@ export function useDiscussionThread(captureId: string | undefined) {
   );
 
   useEffect(() => {
-    selectedGeneration.current = null;
-    loadedCaptureId.current = null;
     if (!captureId) {
+      selectedGeneration.current = null;
+      loadedCaptureId.current = null;
       setLoading(false);
       setData(null);
       setError(null);
       return;
     }
-    setLoading(true);
-    setData(null);
+    if (loadedCaptureId.current !== captureId) {
+      selectedGeneration.current = null;
+      setLoading(true);
+      setData(null);
+    }
     setError(null);
     let active = true;
     let unsubscribe: (() => void) | null = null;
@@ -224,10 +227,8 @@ export function useDiscussionThread(captureId: string | undefined) {
       setComposerState("");
     } catch (reason) {
       setNotice(normalizeError(reason, "discussion"));
-    } finally {
-      refresh();
     }
-  }, [captureId, refresh]);
+  }, [captureId]);
 
   const retry = useCallback(
     async (assistantId: string, mode: "restart" | "resume") => {
@@ -238,29 +239,23 @@ export function useDiscussionThread(captureId: string | undefined) {
         await discussionService.retry(captureId, generation, assistantId, mode);
       } catch (reason) {
         setNotice(normalizeError(reason, "discussion"));
-      } finally {
-        refresh();
       }
     },
-    [captureId, refresh],
+    [captureId],
   );
 
-  const applyProposal = useCallback(
-    async (proposal: ReportUpdateProposal) => {
-      const generation = selectedGeneration.current;
-      if (generation === null) return false;
-      setNotice(null);
-      try {
-        await discussionService.applyProposal(proposal, generation);
-        refresh();
-        return true;
-      } catch (reason) {
-        setNotice(normalizeError(reason, "discussion"));
-        return false;
-      }
-    },
-    [refresh],
-  );
+  const applyProposal = useCallback(async (proposal: ReportUpdateProposal) => {
+    const generation = selectedGeneration.current;
+    if (generation === null) return false;
+    setNotice(null);
+    try {
+      await discussionService.applyProposal(proposal, generation);
+      return true;
+    } catch (reason) {
+      setNotice(normalizeError(reason, "discussion"));
+      return false;
+    }
+  }, []);
 
   const sending =
     data?.messages.some(

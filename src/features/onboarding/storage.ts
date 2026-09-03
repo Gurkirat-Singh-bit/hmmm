@@ -34,6 +34,7 @@ export type OnboardingProfile = Readonly<{
   aiKey: string;
   aiEndpoint: string;
   researchSource?: ResearchSource;
+  researchConsent?: ResearchConsent["status"];
   searchKey?: string;
 }>;
 export type SetupSaveOptions = Readonly<{
@@ -204,6 +205,7 @@ export async function readProfile(): Promise<OnboardingProfile | null> {
     aiKey: ai?.secret ?? "",
     aiEndpoint: preferences.aiProvider.endpoint ?? "",
     researchSource: preferences.researchSource,
+    researchConsent: preferences.researchConsent.status,
     searchKey: search?.secret ?? "",
   };
 }

@@ -8,11 +8,12 @@
 import {
   CaretDownIcon as CaretDown,
   CaretUpIcon as CaretUp,
+  LightbulbIcon as Lightbulb,
 } from "phosphor-react-native";
 import { useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
-import { colors, onboardingFonts, radii } from "@/constants/theme";
+import { colors, onboardingFonts } from "@/constants/theme";
 export function IdeaContextStrip({ gist }: { gist: string | null }) {
   const [expanded, setExpanded] = useState(false);
   const content =
@@ -29,11 +30,11 @@ export function IdeaContextStrip({ gist }: { gist: string | null }) {
         onPress={() => setExpanded((current) => !current)}
         style={({ pressed }) => [styles.toggle, pressed && styles.pressed]}
       >
-        <Text style={styles.label}>Idea gist</Text>
-        <View style={styles.toggleCopy}>
-          <Text style={styles.toggleText}>
-            {expanded ? "Collapse" : "Expand"}
-          </Text>
+        <View style={styles.labelRow}>
+          <Lightbulb color={colors.ink} size={16} weight="fill" />
+          <Text style={styles.label}>Idea context</Text>
+        </View>
+        <View>
           {expanded ? (
             <CaretUp color={colors.ink} size={16} weight="bold" />
           ) : (
@@ -50,12 +51,13 @@ export function IdeaContextStrip({ gist }: { gist: string | null }) {
 
 const styles = StyleSheet.create({
   context: {
-    gap: 2,
-    marginHorizontal: 20,
-    marginTop: 12,
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    borderRadius: radii.large,
+    gap: 1,
+    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
     backgroundColor: colors.primarySoft,
   },
   toggle: {
@@ -65,12 +67,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
-  toggleCopy: { flexDirection: "row", alignItems: "center", gap: 4 },
-  toggleText: {
-    color: colors.ink,
-    fontFamily: onboardingFonts.bodyBold,
-    fontSize: 11,
-  },
+  labelRow: { flexDirection: "row", alignItems: "center", gap: 7 },
   label: {
     color: colors.ink,
     fontFamily: onboardingFonts.displaySemiBold,

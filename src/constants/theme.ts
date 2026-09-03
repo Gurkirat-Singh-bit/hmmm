@@ -39,14 +39,12 @@ export const radii = {
 } as const;
 
 export const onboardingFonts = {
-  // Android's native sans family is the closest available Inter-compatible
-  // option and avoids a font download or a blank startup while it loads.
-  displayRegular: "sans-serif",
-  displayMedium: "sans-serif-medium",
-  displaySemiBold: "sans-serif-medium",
-  displayBold: "sans-serif-black",
-  bodyRegular: "sans-serif",
-  bodyMedium: "sans-serif-medium",
-  bodySemiBold: "sans-serif-medium",
-  bodyBold: "sans-serif-medium",
+  displayRegular: "DynaPuff_400Regular",
+  displayMedium: "DynaPuff_500Medium",
+  displaySemiBold: "DynaPuff_600SemiBold",
+  displayBold: "DynaPuff_700Bold",
+  bodyRegular: "ShortStack_400Regular",
+  bodyMedium: "ShortStack_400Regular",
+  bodySemiBold: "DynaPuff_600SemiBold",
+  bodyBold: "DynaPuff_700Bold",
 } as const;

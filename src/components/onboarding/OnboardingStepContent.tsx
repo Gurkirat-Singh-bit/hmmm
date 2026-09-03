@@ -55,6 +55,8 @@ export function OnboardingStepContent({
 }) {
   const { step } = flow;
   const copy = getStepCopy(step, flow.name);
+  const illustration =
+    step < illustrations.length ? illustrations[step as 0 | 1 | 2 | 3] : null;
   const entrance = useRef(new Animated.Value(1)).current;
   const reduceMotion = useRef(false);
 
@@ -98,19 +100,21 @@ export function OnboardingStepContent({
         ],
       }}
     >
-      <View
-        style={[
-          styles.illustrationSpace,
-          compact && styles.illustrationSpaceCompact,
-        ]}
-      >
-        <Image
-          accessibilityLabel={`Onboarding illustration ${step + 1}`}
-          resizeMode="contain"
-          source={illustrations[step]}
-          style={styles.illustration}
-        />
-      </View>
+      {illustration ? (
+        <View
+          style={[
+            styles.illustrationSpace,
+            compact && styles.illustrationSpaceCompact,
+          ]}
+        >
+          <Image
+            accessibilityLabel={`Onboarding illustration ${step + 1}`}
+            resizeMode="contain"
+            source={illustration}
+            style={styles.illustration}
+          />
+        </View>
+      ) : null}
       <View style={styles.copy}>
         <Text accessibilityRole="header" style={styles.heading}>
           {copy.heading}
@@ -128,7 +132,8 @@ export function OnboardingStepContent({
       ) : null}
       {step === 1 ? <SpeechSetup flow={flow} /> : null}
       {step === 2 ? <AiSetup flow={flow} /> : null}
-      {step === 3 ? <SetupSummary flow={flow} /> : null}
+      {step === 3 ? <ResearchSetup flow={flow} /> : null}
+      {step === 4 ? <SetupSummary flow={flow} /> : null}
     </Animated.View>
   );
 }
@@ -274,6 +279,13 @@ function AiSetup({ flow }: { flow: Flow }) {
       <Text style={styles.transferNote}>
         {provider.label} receives your transcript for reports and chat.
       </Text>
+    </View>
+  );
+}
+function ResearchSetup({ flow }: { flow: Flow }) {
+  const provider = findAiProvider(flow.aiProvider);
+  return (
+    <View style={styles.setup}>
       <ResearchTransferChoices
         attempted={flow.attempted}
         nativeSupported={supportsProviderResearch(
@@ -303,7 +315,11 @@ function getStepCopy(step: Flow["step"], name: string) {
     },
     {
       heading: `Shape ideas, ${name.trim() || "your way"}.`,
-      body: "Choose an AI model and whether it may search the web.",
+      body: "Choose the AI model used for reports and Discuss.",
+    },
+    {
+      heading: "Should reports search the web?",
+      body: "Keep it off, use your AI model, or connect SerpApi for Google results.",
     },
     {
       heading: "Ready when you are.",

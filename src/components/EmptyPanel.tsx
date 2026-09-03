@@ -6,7 +6,7 @@
  */
 
 import { StyleSheet, Text, View } from "react-native";
-import { colors, radii } from "@/constants/theme";
+import { colors, onboardingFonts, radii } from "@/constants/theme";
 export function EmptyPanel({ title, body }: { title: string; body: string }) {
   return (
     <View style={styles.panel}>
@@ -23,6 +23,15 @@ const styles = StyleSheet.create({
     borderRadius: radii.large,
     backgroundColor: colors.surfaceMuted,
   },
-  title: { color: colors.ink, fontSize: 18, fontWeight: "600" },
-  body: { color: colors.inkMuted, fontSize: 14, lineHeight: 20 },
+  title: {
+    color: colors.ink,
+    fontFamily: onboardingFonts.displaySemiBold,
+    fontSize: 18,
+  },
+  body: {
+    color: colors.inkMuted,
+    fontFamily: onboardingFonts.bodyRegular,
+    fontSize: 14,
+    lineHeight: 20,
+  },
 });

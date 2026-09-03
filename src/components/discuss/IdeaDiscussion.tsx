@@ -116,6 +116,7 @@ export function IdeaDiscussion({
             <Text
               accessibilityLabel={title}
               accessibilityRole="header"
+              numberOfLines={2}
               style={styles.title}
             >
               {title}
@@ -179,8 +180,12 @@ export function IdeaDiscussion({
               <View key={message.id} style={styles.messageGroup}>
                 <DiscussionMessage
                   message={message}
+                  onEdit={message.role === "user" ? onSetComposer : undefined}
                   onRetry={
-                    message.role === "assistant"
+                    message.role === "assistant" &&
+                    (message.id === lastMessage?.id ||
+                      message.status === "failed" ||
+                      message.status === "interrupted")
                       ? (mode) => onRetry(message.id, mode)
                       : undefined
                   }

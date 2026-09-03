@@ -332,6 +332,7 @@ export class SqliteMessageRepository implements MessageRepository {
     id: string,
     expectedGeneration: DataGeneration,
     mode: "restart" | "resume",
+    clientRequestId: string,
     updatedAt: string,
   ) {
     requireUtc(updatedAt);
@@ -349,9 +350,9 @@ export class SqliteMessageRepository implements MessageRepository {
         `UPDATE messages SET
           content = CASE WHEN ? = 'restart' THEN '' ELSE content END,
           last_sequence = CASE WHEN ? = 'restart' THEN 0 ELSE last_sequence END,
-          status = 'streaming', proposal_json = NULL, error_json = NULL, updated_at = ?
-         WHERE id = ? AND role = 'assistant' AND generation = ? AND status IN ('interrupted', 'failed')`,
-        [mode, mode, updatedAt, id, expectedGeneration],
+          status = 'streaming', client_request_id = ?, proposal_json = NULL, error_json = NULL, updated_at = ?
+         WHERE id = ? AND role = 'assistant' AND generation = ? AND status IN ('complete', 'interrupted', 'failed')`,
+        [mode, mode, clientRequestId, updatedAt, id, expectedGeneration],
       );
       if (result.changes === 0) {
         const message = await database.getFirstAsync<MessageRow>(
@@ -367,7 +368,7 @@ export class SqliteMessageRepository implements MessageRepository {
         throw domainError(
           "conflict",
           "database",
-          "Only an interrupted or failed response can be retried.",
+          "This response cannot be retried while it is still running.",
         );
       }
       return mapMessage(

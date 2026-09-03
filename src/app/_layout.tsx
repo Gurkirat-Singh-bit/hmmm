@@ -20,14 +20,13 @@ import {
 } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 import { ForegroundFeedbackBanner } from "@/components/settings/ForegroundFeedbackBanner";
 import { FloatingBottomNav } from "@/components/navigation/FloatingBottomNav";
 import { colors, onboardingFonts } from "@/constants/theme";
 import { registerNotificationResponseHandler } from "@/features/notifications/android-notifications";
 import {
-  refreshAppRuntime,
   retryAppRuntime,
   useAppRuntime,
   type AppRuntimeSnapshot,
@@ -51,35 +50,6 @@ function RootNavigator({ runtime }: { runtime: AppRuntimeSnapshot }) {
   const pathname = usePathname();
   const router = useRouter();
   const navigationState = useRootNavigationState();
-  const guardedPath = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (runtime.status !== "ready" || !navigationState?.key) return;
-    const guardKey = `${pathname}:${runtime.onboardingComplete}`;
-    if (guardedPath.current === guardKey) return;
-    guardedPath.current = guardKey;
-    let disposed = false;
-    void refreshAppRuntime()
-      .then((next) => {
-        if (disposed) return;
-        if (!next.onboardingComplete && pathname !== "/onboarding")
-          router.replace("/onboarding");
-        if (next.onboardingComplete && pathname === "/onboarding")
-          router.replace("/");
-      })
-      .catch(() => {
-        if (!disposed) guardedPath.current = null;
-      });
-    return () => {
-      disposed = true;
-    };
-  }, [
-    navigationState?.key,
-    pathname,
-    router,
-    runtime.onboardingComplete,
-    runtime.status,
-  ]);
 
   useEffect(() => {
     if (!navigationState?.key || !runtime.onboardingComplete) return;
@@ -110,7 +80,9 @@ function RootNavigator({ runtime }: { runtime: AppRuntimeSnapshot }) {
           headerShown: false,
         })}
       >
-        <Stack.Screen name="onboarding" />
+        <Stack.Protected guard={!runtime.onboardingComplete}>
+          <Stack.Screen name="onboarding" />
+        </Stack.Protected>
         <Stack.Protected guard={runtime.onboardingComplete}>
           <Stack.Screen name="index" />
           <Stack.Screen name="vault/index" />

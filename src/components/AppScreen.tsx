@@ -11,7 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { MainPageTransition } from "@/components/MainPageTransition";
 import { MainBrandHeader } from "@/components/MainBrandHeader";
-import { colors, spacing } from "@/constants/theme";
+import { colors, onboardingFonts, spacing } from "@/constants/theme";
 export function AppScreen({
   eyebrow,
   title,
@@ -54,22 +54,23 @@ const styles = StyleSheet.create({
   eyebrow: {
     marginTop: 24,
     color: colors.inkMuted,
+    fontFamily: onboardingFonts.bodyBold,
     fontSize: 11,
-    fontWeight: "700",
     letterSpacing: 1.4,
   },
   title: {
     maxWidth: 330,
     marginTop: 10,
     color: colors.ink,
+    fontFamily: onboardingFonts.displayBold,
     fontSize: 34,
-    fontWeight: "700",
     lineHeight: 39,
   },
   supporting: {
     maxWidth: 330,
     marginTop: 10,
     color: colors.inkMuted,
+    fontFamily: onboardingFonts.bodyRegular,
     fontSize: 15,
     lineHeight: 22,
   },

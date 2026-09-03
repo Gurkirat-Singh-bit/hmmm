@@ -24,7 +24,7 @@ import {
   type LayoutChangeEvent,
 } from "react-native";
 
-import { colors, radii } from "@/constants/theme";
+import { colors, onboardingFonts, radii } from "@/constants/theme";
 
 const tabs = [
   { label: "Home", route: "/", icon: House },
@@ -190,6 +190,10 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     backgroundColor: colors.canvas,
   },
-  activeLabel: { color: colors.ink, fontSize: 13, fontWeight: "600" },
+  activeLabel: {
+    color: colors.ink,
+    fontFamily: onboardingFonts.bodySemiBold,
+    fontSize: 13,
+  },
   pressed: { opacity: 0.7 },
 });

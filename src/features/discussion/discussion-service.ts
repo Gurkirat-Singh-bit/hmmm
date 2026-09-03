@@ -37,7 +37,7 @@ import { getVaultDatabase } from "@/features/vault/vault-runtime";
 
 const MESSAGE_PAGE_SIZE = 500;
 const REQUEST_CONTEXT_MESSAGES = 20;
-const STREAM_WRITE_CHARACTERS = 48;
+const STREAM_WRITE_CHARACTERS = 12;
 
 export type DiscussionAvailability = "ready" | "missing-provider";
 
@@ -280,6 +280,7 @@ class DiscussionService {
         assistantId,
         expectedGeneration,
         mode,
+        identity("discussion"),
         new Date().toISOString(),
       );
       this.startStream(database, captureId, assistant);

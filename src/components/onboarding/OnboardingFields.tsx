@@ -12,7 +12,6 @@ import {
   EyeIcon as Eye,
   EyeSlashIcon as EyeSlash,
   KeyIcon as Key,
-  MagnifyingGlassIcon as MagnifyingGlass,
   WarningCircleIcon as WarningCircle,
 } from "phosphor-react-native";
 import * as Linking from "expo-linking";
@@ -225,29 +224,17 @@ export function ResearchTransferChoices({
   const external = source.kind === "external";
   return (
     <View style={styles.researchGroup}>
-      <View style={styles.researchHeading}>
-        <View style={styles.researchIcon}>
-          <MagnifyingGlass color={colors.ink} size={17} weight="bold" />
-        </View>
-        <View style={styles.researchCopy}>
-          <Text style={styles.researchTitle}>Use web search?</Text>
-          <Text style={styles.researchBody}>
-            Choose who searches, then decide whether researched reports are
-            allowed.
-          </Text>
-        </View>
-      </View>
       <Text style={styles.label}>RESEARCH SOURCE</Text>
       <View accessibilityRole="radiogroup" style={styles.researchChoices}>
         <ResearchChoice
           active={!external}
-          body={`Uses ${providerLabel}'s native search tools. A compatible model is required.`}
-          label="AI-native search"
+          body={`${providerLabel} searches directly. Requires a compatible model.`}
+          label="Use my AI provider"
           onPress={() => onSourceChange({ kind: "ai-native" })}
         />
         <ResearchChoice
           active={external}
-          body="Plans one Google query, then sends selected snippets and links to your AI provider."
+          body="Gets Google results with a separate key."
           label="SerpApi"
           onPress={() =>
             onSourceChange({
@@ -261,10 +248,12 @@ export function ResearchTransferChoices({
       {external ? (
         <View style={styles.fieldGroup}>
           <Text style={styles.researchBody}>
-            SerpApi is a separate Google-results service. Hmmmidea uses it only
-            for optional sourced reports. It is not used for transcription or
-            Discuss, and you do not need it if you choose AI-native search or no
-            search.
+            SerpApi is only for adding Google sources to idea reports. It is not
+            used for transcription or Discuss.
+          </Text>
+          <Text style={styles.researchBody}>
+            One derived query goes to SerpApi. Up to six result snippets and
+            links then go to {providerLabel}.
           </Text>
           <Pressable
             accessibilityHint="Opens the official SerpApi account page"
@@ -291,8 +280,7 @@ export function ResearchTransferChoices({
             value={searchKey}
           />
           <Text style={styles.researchBody}>
-            Standard SerpApi searches may be retained for 31 days. ZeroTrace is
-            available only on Enterprise plans.
+            SerpApi may retain standard searches for 31 days.
           </Text>
         </View>
       ) : null}
@@ -624,21 +612,6 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: radii.large,
     backgroundColor: colors.darkSurface,
-  },
-  researchHeading: { flexDirection: "row", alignItems: "flex-start", gap: 10 },
-  researchIcon: {
-    width: 31,
-    height: 31,
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 16,
-    backgroundColor: colors.happy,
-  },
-  researchCopy: { flex: 1, gap: 3 },
-  researchTitle: {
-    color: colors.inkInverse,
-    fontFamily: onboardingFonts.bodySemiBold,
-    fontSize: 13,
   },
   researchBody: {
     color: colors.darkMuted,

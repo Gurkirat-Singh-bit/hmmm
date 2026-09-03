@@ -14,13 +14,17 @@
     "docs:audit": "bun scripts/audit-jsdoc.js"
   },
   "dependencies": {
+    "@expo-google-fonts/dynapuff": "^0.4.3",
+    "@expo-google-fonts/short-stack": "^0.4.1",
     "@react-navigation/native": "^7.1.8",
     "@siteed/audio-studio": "3.2.0",
     "expo": "~54.0.37",
     "expo-asset": "~12.0.13",
     "expo-audio": "~1.1.1",
+    "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.14",
     "expo-file-system": "~19.0.24",
+    "expo-font": "~14.0.12",
     "expo-linking": "~8.0.12",
     "expo-notifications": "~0.32.17",
     "expo-print": "~15.0.8",

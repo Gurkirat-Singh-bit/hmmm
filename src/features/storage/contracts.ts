@@ -216,11 +216,12 @@ export interface MessageRepository {
     delta: string,
     updatedAt: IsoTimestamp,
   ): Promise<MessageRecord>;
-  /** Reopens an interrupted or failed assistant row without creating another turn. */
+  /** Reopens an assistant row for an explicit retry without creating another turn. */
   retryAssistant(
     id: MessageId,
     expectedGeneration: DataGeneration,
     mode: AssistantRetryMode,
+    clientRequestId: string,
     updatedAt: IsoTimestamp,
   ): Promise<MessageRecord>;
   finishAssistant(

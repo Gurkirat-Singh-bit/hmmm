@@ -12,7 +12,8 @@ import {
   PlayIcon as Play,
   TrashIcon as Trash,
 } from "phosphor-react-native";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useEffect, useRef } from "react";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, onboardingFonts, radii } from "@/constants/theme";
 import type { CapturePresentation } from "@/features/capture/state";
 
@@ -47,19 +48,15 @@ export function VoiceCapturePanel({
         ]}
       >
         <Text style={styles.timer}>{time}</Text>
-        <Text
-          accessibilityLiveRegion={
-            capture.phase === "failure"
-              ? "assertive"
-              : capture.message
-                ? "polite"
-                : "none"
+        <LiveCaption
+          assertive={capture.phase === "failure"}
+          live={
+            capture.transcriptMode === "live" &&
+            Boolean(capture.transcript) &&
+            capture.phase === "recording"
           }
-          numberOfLines={4}
-          style={styles.transcriptText}
-        >
-          {captureCopy(capture)}
-        </Text>
+          text={captureCopy(capture)}
+        />
         {capture.transcript && capture.message ? (
           <Text accessibilityLiveRegion="polite" style={styles.liveStatus}>
             {capture.message}
@@ -96,6 +93,57 @@ export function VoiceCapturePanel({
       </View>
     </View>
   );
+}
+function LiveCaption({
+  assertive,
+  live,
+  text,
+}: {
+  assertive: boolean;
+  live: boolean;
+  text: string;
+}) {
+  const opacity = useRef(new Animated.Value(1)).current;
+  const lines = liveCaptionLines(text);
+  useEffect(() => {
+    if (!live) return;
+    opacity.setValue(0.35);
+    Animated.timing(opacity, {
+      duration: 220,
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  }, [live, opacity, text]);
+  return (
+    <View
+      accessibilityLiveRegion={
+        assertive ? "assertive" : live ? "polite" : "none"
+      }
+      style={styles.captionViewport}
+    >
+      {live && lines.previous ? (
+        <Text style={[styles.transcriptText, styles.previousWords]}>
+          {lines.previous}
+        </Text>
+      ) : null}
+      <Animated.Text
+        ellipsizeMode="clip"
+        numberOfLines={live ? 2 : 4}
+        style={[styles.transcriptText, live && { opacity }]}
+      >
+        {live ? lines.latest : text}
+      </Animated.Text>
+    </View>
+  );
+}
+function liveCaptionLines(text: string) {
+  const words = text.trim().split(/\s+/u).filter(Boolean);
+  const latestStart = Math.max(0, words.length - 10);
+  const previousStart = Math.max(0, latestStart - 8);
+  return {
+    previous: words.slice(previousStart, latestStart).join(" "),
+    latest: words.slice(latestStart).join(" "),
+  };
 }
 function primaryAction(capture: CapturePresentation) {
   if (capture.phase === "recording" || capture.phase === "paused")
@@ -195,14 +243,25 @@ const styles = StyleSheet.create({
     fontSize: 42,
     letterSpacing: -1.5,
   },
+  captionViewport: {
+    minHeight: 66,
+    alignItems: "center",
+    justifyContent: "flex-end",
+    marginTop: 6,
+  },
   transcriptText: {
     maxWidth: 280,
-    marginTop: 5,
     color: colors.ink,
     fontFamily: onboardingFonts.displaySemiBold,
     fontSize: 16,
     lineHeight: 20,
     textAlign: "center",
+  },
+  previousWords: {
+    marginBottom: 2,
+    opacity: 0.32,
+    fontSize: 12,
+    lineHeight: 16,
   },
   liveStatus: {
     maxWidth: 280,

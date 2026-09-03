@@ -7,9 +7,13 @@
 
 import {
   ArrowClockwiseIcon as ArrowClockwise,
+  CheckIcon as Check,
+  CopyIcon as Copy,
+  PencilSimpleIcon as PencilSimple,
   PlayIcon as Play,
 } from "phosphor-react-native";
-import { useEffect, useRef } from "react";
+import * as Clipboard from "expo-clipboard";
+import { useEffect, useRef, useState } from "react";
 import {
   AccessibilityInfo,
   Pressable,
@@ -22,9 +26,11 @@ import { colors, onboardingFonts, radii } from "@/constants/theme";
 import type { MessageRecord } from "@/features/domain/contracts";
 export function DiscussionMessage({
   message,
+  onEdit,
   onRetry,
 }: {
   message: MessageRecord;
+  onEdit?(content: string): void;
   onRetry?(mode: "restart" | "resume"): void;
 }) {
   const waiting =
@@ -72,6 +78,10 @@ export function DiscussionMessage({
         <View style={styles.userBubble}>
           <Text style={styles.userText}>{message.content}</Text>
         </View>
+        <MessageActions
+          content={message.content}
+          onEdit={onEdit ? () => onEdit(message.content) : undefined}
+        />
       </View>
     );
   }
@@ -113,6 +123,79 @@ export function DiscussionMessage({
             <RetryActions hasPartial={hasPartial} onRetry={onRetry} />
           ) : null}
         </>
+      ) : null}
+      {!waiting && !retryable && hasPartial ? (
+        <MessageActions
+          content={message.content}
+          onRetry={onRetry ? () => onRetry("restart") : undefined}
+        />
+      ) : null}
+    </View>
+  );
+}
+
+function MessageActions({
+  content,
+  onEdit,
+  onRetry,
+}: {
+  content: string;
+  onEdit?: () => void;
+  onRetry?: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    await Clipboard.setStringAsync(content);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1_500);
+  };
+  return (
+    <View style={styles.messageActions}>
+      <Pressable
+        accessibilityLabel="Copy message"
+        accessibilityRole="button"
+        onPress={() => void copy()}
+        style={({ pressed }) => [
+          styles.messageAction,
+          pressed && styles.pressed,
+        ]}
+      >
+        {copied ? (
+          <Check color={colors.inkMuted} size={14} weight="bold" />
+        ) : (
+          <Copy color={colors.inkMuted} size={14} weight="bold" />
+        )}
+        <Text style={styles.messageActionText}>
+          {copied ? "Copied" : "Copy"}
+        </Text>
+      </Pressable>
+      {onEdit ? (
+        <Pressable
+          accessibilityLabel="Edit message in composer"
+          accessibilityRole="button"
+          onPress={onEdit}
+          style={({ pressed }) => [
+            styles.messageAction,
+            pressed && styles.pressed,
+          ]}
+        >
+          <PencilSimple color={colors.inkMuted} size={14} weight="bold" />
+          <Text style={styles.messageActionText}>Edit</Text>
+        </Pressable>
+      ) : null}
+      {onRetry ? (
+        <Pressable
+          accessibilityLabel="Generate this reply again"
+          accessibilityRole="button"
+          onPress={onRetry}
+          style={({ pressed }) => [
+            styles.messageAction,
+            pressed && styles.pressed,
+          ]}
+        >
+          <ArrowClockwise color={colors.inkMuted} size={14} weight="bold" />
+          <Text style={styles.messageActionText}>Retry</Text>
+        </Pressable>
       ) : null}
     </View>
   );
@@ -287,9 +370,9 @@ function RetryActions({
 }
 
 const styles = StyleSheet.create({
-  userWrap: { alignItems: "flex-end", marginLeft: 42 },
+  userWrap: { alignItems: "flex-end", marginLeft: 36 },
   userBubble: {
-    maxWidth: 310,
+    maxWidth: "90%",
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: radii.large,
@@ -302,7 +385,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 21,
   },
-  assistantWrap: { maxWidth: 340, alignItems: "flex-start" },
+  assistantWrap: { width: "100%", alignItems: "flex-start" },
   assistantName: {
     color: colors.inkMuted,
     fontFamily: onboardingFonts.bodyBold,
@@ -342,6 +425,25 @@ const styles = StyleSheet.create({
     fontFamily: onboardingFonts.bodyMedium,
     fontSize: 12,
     lineHeight: 17,
+  },
+  messageActions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 4,
+    marginTop: 5,
+  },
+  messageAction: {
+    minHeight: 40,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 9,
+    borderRadius: radii.pill,
+  },
+  messageActionText: {
+    color: colors.inkMuted,
+    fontFamily: onboardingFonts.bodySemiBold,
+    fontSize: 10,
   },
   retryActions: {
     flexDirection: "row",

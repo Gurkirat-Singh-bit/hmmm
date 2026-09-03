@@ -46,6 +46,18 @@
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFF"
         }
+      ],
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "node_modules/@expo-google-fonts/dynapuff/400Regular/DynaPuff_400Regular.ttf",
+            "node_modules/@expo-google-fonts/dynapuff/500Medium/DynaPuff_500Medium.ttf",
+            "node_modules/@expo-google-fonts/dynapuff/600SemiBold/DynaPuff_600SemiBold.ttf",
+            "node_modules/@expo-google-fonts/dynapuff/700Bold/DynaPuff_700Bold.ttf",
+            "node_modules/@expo-google-fonts/short-stack/400Regular/ShortStack_400Regular.ttf"
+          ]
+        }
       ]
     ],
     "experiments": {

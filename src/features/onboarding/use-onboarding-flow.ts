@@ -32,8 +32,8 @@ import {
 import { serpApiSearchProvider } from "@/features/provider/search/serpapi";
 import { refreshAppRuntime } from "@/features/runtime/app-runtime";
 
-export const onboardingStepCount = 4;
-export type OnboardingStep = 0 | 1 | 2 | 3;
+export const onboardingStepCount = 5;
+export type OnboardingStep = 0 | 1 | 2 | 3 | 4;
 export type OnboardingNotice = { title: string; body: string } | null;
 type ResearchDecision =
   Exclude<ResearchConsent["status"], "unknown"> | "unknown";
@@ -89,6 +89,7 @@ export function useOnboardingFlow() {
         setAiKey(profile.aiKey);
         setAiEndpoint(profile.aiEndpoint);
         setResearchSource(profile.researchSource ?? RESEARCH_SOURCES.aiNative);
+        setResearchConsent(profile.researchConsent ?? "unknown");
         setSearchKey(profile.searchKey ?? "");
       })
       .catch(() =>
@@ -112,14 +113,17 @@ export function useOnboardingFlow() {
           ? Boolean(
               aiKey.trim() &&
               aiModel.trim() &&
-              (aiProvider !== "custom" || aiEndpoint.trim()) &&
-              researchConsent !== "unknown" &&
-              (researchConsent === "denied" ||
-                (researchSource.kind === "external"
-                  ? searchKey.trim()
-                  : supportsProviderResearch(aiProvider, aiModel))),
+              (aiProvider !== "custom" || aiEndpoint.trim()),
             )
-          : true;
+          : step === 3
+            ? Boolean(
+                researchConsent !== "unknown" &&
+                (researchConsent === "denied" ||
+                  (researchSource.kind === "external"
+                    ? searchKey.trim()
+                    : supportsProviderResearch(aiProvider, aiModel))),
+              )
+            : true;
   const moveTo = (nextStep: OnboardingStep) => {
     setAttempted(false);
     setStep(nextStep);
